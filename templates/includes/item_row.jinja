@@ -1,0 +1,7 @@
+<tr>
+    <td>
+        {{ item.name }}
+        {% if item.variant %}&ensp;<span class="item_variant">({{ item.variant }})</span>{% endif %}
+    </td>
+    <td class="item_price">{{ item.price|format_currency }}</td>
+</tr>

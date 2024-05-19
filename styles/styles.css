@@ -1,0 +1,39 @@
+@font-face {
+  font-family: Lato;
+  src: url(Lato-Regular.ttf);
+  font-weight: normal;
+}
+
+@font-face {
+  font-family: Lato;
+  src: url(Lato-Bold.ttf);
+  font-weight: bold;
+}
+
+body {
+  font-family: Lato;
+  font-size: 13pt;
+}
+
+.two-column {
+  column-count: 2;
+}
+
+.prices_table {
+  width: 75%;
+  break-inside: avoid-column;
+  border-collapse: collapse;
+}
+
+.item_group {
+  border-bottom: 3mm solid transparent;
+}
+
+.item_variant {
+  font-size: 0.8em;
+  color: #303030;
+}
+
+.item_price {
+  text-align: right;
+}

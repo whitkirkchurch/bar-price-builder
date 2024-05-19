@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en-GB">
+    <head>
+        <title>Lighthouse Bar Price List</title>
+        <style>
+          @page {
+            size: A3;
+            margin: 10mm 10mm 15mm 10mm;
+
+            @bottom-left {
+              content:  "Generated {{ generated_time }}";
+              font-size: 0.6em;
+              font-family: Lato;
+              margin-bottom: 10mm;
+              margin-top: 5mm;
+            }
+          }
+        </style>
+    </head>
+    <body>
+        <h1>
+            Lighthouse Bar
+            <br>
+            Price List
+        </h1>
+        <div class="two-column">
+            {% for section in prices_data %}
+                <h2>{{ section.name }}</h2>
+                {% with items=section['items'] %}
+                    {% include "includes/items_table.jinja" %}
+                {% endwith %}
+            {% endfor %}
+        </div>
+        <p>All our drinks are served in glasses.</p>
+    </body>
+</html>

@@ -1,0 +1,52 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://whitkirk.com/bar/prices.schema.json",
+  "title": "Bar Prices List",
+  "description": "Structured data needed to produce a list of prices for the bar.",
+  "type": "array",
+  "items": {
+    "type": "object",
+    "title": "Product category",
+    "description": "An overarching category under which we want to group a range of products.",
+    "properties": {
+      "name": {
+        "title": "Category name",
+        "type": "string"
+      },
+      "items": {
+        "title": "Category items",
+        "type": "array",
+        "minItems": 1,
+        "items": {
+          "anyOf": [
+            {
+              "type": "array",
+              "items": { "$ref": "/product_item", "minItems": 2 }
+            },
+            {
+              "$ref": "/product_item"
+            }
+          ]
+        }
+      }
+    },
+    "required": ["name", "items"],
+    "additionalProperties": false
+  },
+  "$defs": {
+    "product_item": {
+      "$id": "/product_item",
+      "$schema": "https://json-schema.org/draft/2020-12/schema",
+      "title": "Product",
+      "description": "An individual line item which we want to appear on the price list.",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "price": { "type": "integer" },
+        "variant": { "type": "string" }
+      },
+      "required": ["name", "price"],
+      "additionalProperties": false
+    }
+  }
+}

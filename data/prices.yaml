@@ -1,0 +1,57 @@
+---
+- name: Draught
+  items:
+    - - name: Black Sheep Bitter
+        variant: Pint
+        price: 320
+      - name: Black Sheep Bitter
+        variant: Half
+        price: 160
+    - - name: Coors
+        variant: Pint
+        price: 320
+      - name: Coors
+        variant: Half
+        price: 160
+    - - name: Staropramen
+        variant: Pint
+        price: 320
+      - name: Staropramen
+        variant: Half
+        price: 160
+    - - name: Cold River Cider
+        variant: Pint
+        price: 320
+      - name: Cold River Cider
+        variant: Half
+        price: 160
+- name: Bottles and cans
+  items:
+    - name: Madri
+      price: 350
+
+- name: Soft drinks
+  items:
+    - - name: Harrogate Spring
+        variant: Still
+        price: 120
+- name: Wines
+  items:
+    - name: A wine
+      price: 1250
+- name: Spirits
+  items:
+    - - name: Archers
+        price: 230
+      - name: Bacardi
+        price: 230
+      - name: Bacardi 8
+        price: 330
+      - name: Baileys
+        price: 300
+      - name: Bell's
+        price: 230
+    - - name: Beefeater Blood Orange
+        price: 330
+      - name: Bombay Sapphire
+        price: 330

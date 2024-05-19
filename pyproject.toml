@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "bar-price-builder"
+version = "0.1.0"
+description = ""
+authors = ["Nick Jackson <nick@whitkirkchurch.org.uk>"]
+readme = "README.md"
+package-mode = false
+
+[tool.poetry.dependencies]
+python = "^3.10"
+weasyprint = "^62.1"
+click = "^8.1.7"
+jinja2 = "^3.1.4"
+pyyaml = "^6.0.1"
+
+[tool.poetry.group.dev.dependencies]
+json-schema-for-humans = "^1.0.2"
+
+[tool.djlint]
+ignore="H030,H031"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
