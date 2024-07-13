@@ -20,7 +20,7 @@ body {
 }
 
 .prices_table {
-  width: 75%;
+  width: 80%;
   break-inside: avoid-column;
   border-collapse: collapse;
 }

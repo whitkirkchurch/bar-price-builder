@@ -1,3 +1,6 @@
+[project]
+requires-python = ">= 3.12"
+
 [tool.poetry]
 name = "bar-price-builder"
 version = "0.1.0"
@@ -12,9 +15,19 @@ weasyprint = "^62.1"
 click = "^8.1.7"
 jinja2 = "^3.1.4"
 pyyaml = "^6.0.1"
+pytz = "^2024.1"
 
 [tool.poetry.group.dev.dependencies]
 json-schema-for-humans = "^1.0.2"
+
+[tool.ruff]
+line-length = 120
+
+[tool.ruff.lint]
+ignore = ["E501", "G004", "PLR2004", "RUF005", "RUF012", "UP040"] # long lines, fstrings in logs, magic values, consider not concat, mutable classbits, type instead of TypeAlias
+extend-select = ["W", "B", "Q", "C90", "I", "UP", "YTT", "ASYNC", "S", "BLE", "A", "COM", "C4", "DTZ", "T10", "DJ", "EM", "EXE", "FA",
+                 "ISC", "ICN", "G", "INP", "PIE", "T20", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SLOT", "SIM", "TID", "TCH", "INT", "PTH",
+                 "FIX", "PGH", "PL", "TRY", "FLY", "PERF", "RUF"]
 
 [tool.djlint]
 ignore="H030,H031"

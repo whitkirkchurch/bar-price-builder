@@ -2,56 +2,125 @@
 - name: Draught
   items:
     - - name: Black Sheep Bitter
-        variant: Pint
-        price: 320
+        size: Pint
+        price: 380
+        plus: [2]
       - name: Black Sheep Bitter
-        variant: Half
-        price: 160
+        size: Half
+        price: 190
+        plus: [8]
     - - name: Coors
-        variant: Pint
-        price: 320
+        size: Pint
+        price: 400
+        plus: [1]
       - name: Coors
-        variant: Half
-        price: 160
+        size: Half
+        price: 200
+        plus: [7]
     - - name: Staropramen
-        variant: Pint
-        price: 320
+        size: Pint
+        price: 480
+        plus: [3]
       - name: Staropramen
-        variant: Half
-        price: 160
+        size: Half
+        price: 240
+        plus: [9]
     - - name: Cold River Cider
-        variant: Pint
-        price: 320
+        size: Pint
+        price: 360
+        plus: [4]
       - name: Cold River Cider
-        variant: Half
-        price: 160
+        size: Half
+        price: 180
+        plus: [10]
+
 - name: Bottles and cans
   items:
-    - name: Madri
-      price: 350
+    - - name: Madri
+        price: 350
+        plus: [28]
+      - name: Guinness
+        price: 480
+        plus: [20]
+      - name: Rekorderlig
+        price: 480
+        plus: [25, 26, 27]
+    - - name: Guinness 0.0
+        price: 350
+        plus: [16]
+      - name: Erdinger Alkoholfrei
+        price: 350
+        plus: [13]
+      - name: Heineken 0.0
+        price: 220
+        plus: [14]
+      - name: Old Mout
+        note: Alcohol Free
+        price: 350
+        plus: [15]
 
-- name: Soft drinks
-  items:
-    - - name: Harrogate Spring
-        variant: Still
-        price: 120
 - name: Wines
   items:
-    - name: A wine
-      price: 1250
+    - - name: Red Wine
+        size: 75cl
+        variants: [Shiraz, Merlot, Malbec]
+        price: 1500
+        plus: [61, 63, 65]
+      - name: Red Wine
+        size: 250ml
+        variants: [Shiraz, Merlot]
+        price: 450
+        plus: [67, 69]
+
+- name: Soft drinks and mixers
+  items:
+    - - name: Coke
+        price: 150
+        plus: [193, 194, 195]
+      - name: Lemonade
+        price: 150
+        plus: [196]
+      - name: J2O
+        price: 250
+        plus: [181, 182]
+      - name: Fruit Shoot
+        price: 140
+        plus: [219, 220, 224]
+    - - name: Harrogate Spring
+        variants: ["Still", "Sparkling"]
+        price: 120
+        plus: [221, 122]
+    - - name: Fever Tree Tonic
+        price: 180
+        plus: [203, 204, 205]
+      - name: Soda Water
+        price: 150
+        plus: [206]
 - name: Spirits
   items:
     - - name: Archers
         price: 230
+        plus: [121]
       - name: Bacardi
         price: 230
+        plus: [122]
       - name: Bacardi 8
         price: 330
+        plus: [145]
       - name: Baileys
         price: 300
+        plus: [123]
       - name: Bell's
         price: 230
+        plus: [124]
     - - name: Beefeater Blood Orange
         price: 330
+        plus: [176]
       - name: Bombay Sapphire
         price: 330
+        plus: [160]
+- name: Snacks
+  items:
+    - name: Pringles
+      price: 100
+      plus: [301]
