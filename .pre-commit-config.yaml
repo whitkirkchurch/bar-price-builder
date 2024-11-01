@@ -38,7 +38,7 @@ repos:
         args: ["--schemafile", "data/schema/prices.schema.json"]
 
   - repo: https://github.com/Riverside-Healthcare/djLint
-    rev: v1.35.3
+    rev: v1.35.4
     hooks:
       - id: djlint-reformat-jinja
       - id: djlint-jinja
