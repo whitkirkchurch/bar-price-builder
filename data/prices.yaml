@@ -48,16 +48,19 @@
     - - name: Guinness 0.0
         price: 350
         plus: [16]
+        alcohol_free: true
       - name: Erdinger Alkoholfrei
         price: 350
         plus: [13]
+        alcohol_free: true
       - name: Heineken 0.0
         price: 220
         plus: [14]
+        alcohol_free: true
       - name: Old Mout
-        note: Alcohol Free
         price: 350
         plus: [15]
+        alcohol_free: true
 
 - name: Wines
   items:
@@ -99,6 +102,16 @@
         size: 75cl
         price: 1800
         plus: [99]
+    - - name: Nosecco
+        size: 250ml
+        price: 360
+        plus: [108]
+        alcohol_free: true
+      - name: Nosecco
+        size: 75cl
+        price: 1000
+        plus: [107]
+        alcohol_free: true
 - name: Soft drinks and mixers
   items:
     - - name: Coke
@@ -140,7 +153,14 @@
       - name: Bell's
         price: 230
         plus: [124]
-    - - name: Beefeater Blood Orange
+    - - name: Gordon's Gin
+        price: 230
+        plus: [127]
+      - name: Gordon's 0.0%
+        price: 150
+        plus: [150]
+        alcohol_free: true
+      - name: Beefeater Blood Orange
         price: 330
         plus: [176]
       - name: Bombay Sapphire

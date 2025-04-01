@@ -29,6 +29,11 @@ body {
   border-bottom: 3mm solid transparent;
 }
 
+.alcohol_free {
+  font-size: 0.8em;
+  font-weight: bold;
+}
+
 .item_variant {
   font-size: 0.8em;
   color: #303030;
