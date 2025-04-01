@@ -27,7 +27,7 @@ def is_list(value) -> bool:
     return isinstance(value, list)
 
 
-def plu_report_row_discardable(row) -> bool:
+def plu_report_row_discardable(row) -> bool:  ## noqa: PLR0911
     # Skip if PLU is empty
     if row["plu"] == "":
         return True
@@ -38,6 +38,10 @@ def plu_report_row_discardable(row) -> bool:
 
     # Skip if PLU is in ignore file
     if int(row["plu"]) in get_all_ignored_plus():
+        return True
+
+    # Skip if name is empty
+    if row["name"].strip() == "":
         return True
 
     # Skip if name begins with 'PLU'
