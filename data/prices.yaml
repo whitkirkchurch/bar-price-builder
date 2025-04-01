@@ -62,16 +62,15 @@
 - name: Wines
   items:
     - - name: Red Wine
-        size: 75cl
-        variants: [Shiraz, Merlot, Malbec]
-        price: 1500
-        plus: [61, 63, 65]
-      - name: Red Wine
         size: 250ml
         variants: [Shiraz, Merlot]
         price: 450
         plus: [67, 69]
-
+      - name: Red Wine
+        size: 75cl
+        variants: [Shiraz, Merlot]
+        price: 1500
+        plus: [61, 63, 64, 65]
 - name: Soft drinks and mixers
   items:
     - - name: Coke
