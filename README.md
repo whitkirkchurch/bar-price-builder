@@ -2,6 +2,16 @@
 
 This repository contains all the code to produce the price list for the bar at St Mary's Church Whitkirk Community Centre.
 
+## Developing
+
+We use [pre-commit](https://pre-commit.com/) to automate some sense checks. Download this, then run
+
+```
+pre-commit install
+```
+
+to make sure you have the right commit hooks in place.
+
 ## Updating price data
 
 ### Getting the source price report
