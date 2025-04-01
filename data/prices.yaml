@@ -81,6 +81,16 @@
         variants: [Sauvignon Blanc, Chardonnay, Pinot Grigio]
         price: 1500
         plus: [79, 81, 83]
+    - - name: Rosé Wine
+        size: 250ml
+        variants: [White Zinfandel]
+        price: 450
+        plus: [103]
+      - name: Rosé Wine
+        size: 75cl
+        variants: [White Zinfandel]
+        price: 1500
+        plus: [97]
 - name: Soft drinks and mixers
   items:
     - - name: Coke
