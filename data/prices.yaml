@@ -91,6 +91,14 @@
         variants: [White Zinfandel]
         price: 1500
         plus: [97]
+    - - name: Prosecco
+        size: 250ml
+        price: 600
+        plus: [105]
+      - name: Prosecco
+        size: 75cl
+        price: 1800
+        plus: [99]
 - name: Soft drinks and mixers
   items:
     - - name: Coke
