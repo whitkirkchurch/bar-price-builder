@@ -34,6 +34,9 @@ repos:
     rev: 0.32.1
     hooks:
       - id: check-jsonschema
+        files: ^data/ignore.yaml$
+        args: ["--schemafile", "data/schema/ignore.schema.json"]
+      - id: check-jsonschema
         files: ^data/prices.yaml$
         args: ["--schemafile", "data/schema/prices.schema.json"]
 

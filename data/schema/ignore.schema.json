@@ -1,0 +1,8 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://whitkirk.com/bar/ignore.schema.json",
+  "title": "Bar Prices Ignored PLUs",
+  "description": "A list of PLUs to be explicitly ignored in performing integrity checks.",
+  "type": "array",
+  "items": { "type": "integer" }
+}
