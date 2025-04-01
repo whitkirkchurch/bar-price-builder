@@ -153,6 +153,21 @@
       - name: Bell's
         price: 230
         plus: [124]
+      - name: Courvoisier
+        price: 260
+        plus: [125]
+      - name: Cointreau
+        price: 230
+        plus: [126]
+    - - name: Glenfiddich 12
+        price: 380
+        plus: [164]
+      - name: Laphroaig 10
+        price: 450
+        plus: [147]
+      - name: Macallan Gold
+        price: 450
+        plus: [165]
     - - name: Gordon's London Dry Gin
         price: 230
         plus: [127]
