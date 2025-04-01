@@ -40,9 +40,10 @@ def plu_report_row_discardable(row) -> bool:
         return True
 
     # Skip if name begins with 'XXX'
-    if row["name"].startswith("XXX"):
+    if row["name"].startswith("XXX"):  ## noqa: SIM103
         return True
 
+    # If we've reached here, it can't be discarded.
     return False
 
 
@@ -107,7 +108,7 @@ def check(file):
         if int(product["plu"]) not in plus_in_price_list:
             click.echo(
                 click.style(
-                    f'MISSING: PLU {product["plu"]} ({product["name"]}) is missing from price list, till price is {product_price}',
+                    f"MISSING: PLU {product['plu']} ({product['name']}) is missing from price list, till price is {product_price}",
                     fg="red",
                 ),
             )
@@ -118,7 +119,7 @@ def check(file):
         if product_plu_price["price"] != product_price:
             click.echo(
                 click.style(
-                    f'PRICE MISMATCH: PLU {product["plu"]} ({product["name"]}) is priced {product_price} on the till but {product_plu_price["price"]} on the list',
+                    f"PRICE MISMATCH: PLU {product['plu']} ({product['name']}) is priced {product_price} on the till but {product_plu_price['price']} on the list",
                     fg="red",
                 ),
             )
