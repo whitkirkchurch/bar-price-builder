@@ -1,5 +1,6 @@
 import csv
 from datetime import datetime
+from functools import cache
 from pathlib import Path
 from typing import TypedDict
 
@@ -35,6 +36,10 @@ def plu_report_row_discardable(row) -> bool:
     if not row["plu"].isnumeric():
         return True
 
+    # Skip if PLU is in ignore file
+    if int(row["plu"]) in get_all_ignored_plus():
+        return True
+
     # Skip if name begins with 'PLU'
     if row["name"].startswith("PLU"):
         return True
@@ -62,6 +67,13 @@ def write_html_to_pdf_with_styles(html: str, output_filename: str) -> None:
     )
 
 
+@cache
+def get_all_ignored_plus() -> list[int]:
+    with (DATA_DIR / "ignore.yaml").open() as ignore_file:
+        return yaml.safe_load(ignore_file)
+
+
+@cache
 def get_all_plus_in_price_list() -> dict[int, PluPrice]:
     with (DATA_DIR / "prices.yaml").open() as prices_file:
         price_data = yaml.safe_load(prices_file)
@@ -74,7 +86,7 @@ def get_all_plus_in_price_list() -> dict[int, PluPrice]:
                 for variant in item:
                     if "plus" in variant:
                         for plu in variant["plus"]:
-                            plus[plu] = {"price": variant["price"]}
+                            plus[int(plu)] = {"price": variant["price"]}
             elif "plus" in item:
                 for plu in item["plus"]:
                     plus[plu] = {"price": item["price"]}
