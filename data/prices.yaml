@@ -71,6 +71,16 @@
         variants: [Shiraz, Merlot]
         price: 1500
         plus: [61, 63, 64, 65]
+    - - name: White Wine
+        size: 250ml
+        variants: [Sauvignon Blanc, Chardonnay, Pinot Grigio]
+        price: 450
+        plus: [85, 87, 89]
+      - name: White Wine
+        size: 75cl
+        variants: [Sauvignon Blanc, Chardonnay, Pinot Grigio]
+        price: 1500
+        plus: [79, 81, 83]
 - name: Soft drinks and mixers
   items:
     - - name: Coke
