@@ -153,19 +153,37 @@
       - name: Bell's
         price: 230
         plus: [124]
-    - - name: Gordon's Gin
+    - - name: Gordon's London Dry Gin
         price: 230
         plus: [127]
+      - name: Gordon's Pink Gin
+        price: 330
+        plus: [166]
       - name: Gordon's 0.0%
         price: 150
         plus: [150]
         alcohol_free: true
-      - name: Beefeater Blood Orange
+      - name: Beefeater Blood Orange Gin
         price: 330
         plus: [176]
       - name: Bombay Sapphire
         price: 330
         plus: [160]
+      - name: Brockman's Gin
+        price: 330
+        plus: [167]
+      - name: Mason's Gin
+        price: 350
+        plus: [161]
+      - name: Mason's Tea Gin
+        price: 350
+        plus: [149]
+      - name: Tanqueray London Dry Gin
+        price: 330
+        plus: [146]
+      - name: Whitley Neill Rhubarb & Ginger Gin
+        price: 330
+        plus: [177]
 - name: Snacks
   items:
     - name: Pringles
