@@ -54,6 +54,9 @@
           "type": "array",
           "minItems": 1,
           "items": { "type": "integer" }
+        },
+        "alcohol_free": {
+          "type": "boolean"
         }
       },
       "required": ["name", "price", "plus"],

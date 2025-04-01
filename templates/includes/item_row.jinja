@@ -1,6 +1,7 @@
 <tr>
     <td>
         {{ item.name }}
+        {% if item.alcohol_free %}&ensp;<span class="alcohol_free">(AF)</span>{% endif %}
         {% if item.note %}&ensp;<span class="item_variant">({{ item.note }})</span>{% endif %}
         {% if item.variants %}&ensp;<span class="item_variant">({{ item.variants|join("/") }})</span>{% endif %}
         {% if item.size %}&ensp;<span class="item_variant">({{ item.size }})</span>{% endif %}
