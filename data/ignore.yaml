@@ -1,8 +1,13 @@
 ---
 - 5 # Coors Master
+- 12 # Guest ale (bottle)
+- 40 # Guest ale (pint)
+- 41 # Guest ale (half)
 - 151 # Gins
+- 154 # 5 shots
 - 168 # 10 shots
 - 174 # Pimms Glass
 - 175 # Pimms Pitcher
+- 209 # Chilled water
 - 223 # Tonics
 - 300 # Drinks Package
