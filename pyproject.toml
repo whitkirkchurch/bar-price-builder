@@ -18,7 +18,7 @@ pyyaml = "^6.0.1"
 pytz = "^2025.2"
 
 [tool.poetry.group.dev.dependencies]
-json-schema-for-humans = "^1.0.2"
+json-schema-for-humans = "1.3.4"
 
 [tool.ruff]
 line-length = 120
