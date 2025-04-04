@@ -1,15 +1,4 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": [
-    "config:recommended",
-    ":approveMajorUpdates",
-    ":automergeLinters",
-    ":automergePatch",
-    ":automergePr",
-    ":automergeRequireAllStatusChecks",
-    ":automergeTesters",
-    ":dependencyDashboard",
-    ":enablePreCommit",
-    ":maintainLockFilesWeekly"
-  ]
+  "extends": ["github>whitkirkchurch/renovate-config"]
 }
