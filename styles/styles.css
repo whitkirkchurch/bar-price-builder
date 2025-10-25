@@ -12,7 +12,7 @@
 
 body {
   font-family: Lato;
-  font-size: 13pt;
+  font-size: 12pt;
 }
 
 .two-column {
@@ -20,7 +20,7 @@ body {
 }
 
 .prices_table {
-  width: 80%;
+  width: 90%;
   break-inside: avoid-column;
   border-collapse: collapse;
 }
@@ -29,16 +29,30 @@ body {
   border-bottom: 3mm solid transparent;
 }
 
-.alcohol_free {
+.item_details {
+  width: 100%;
+}
+
+.item_description::after {
   font-size: 0.7em;
+  content: leader(dotted);
+  color: #999;
+}
+
+.item_flags {
+  break-inside: avoid;
+  font-size: 0.7em;
+}
+
+.alcohol_free {
   font-weight: bold;
 }
 
 .item_variant {
-  font-size: 0.7em;
   color: #303030;
 }
 
 .item_price {
   text-align: right;
+  vertical-align: bottom;
 }
