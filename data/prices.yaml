@@ -36,9 +36,12 @@
 
 - name: Bottles and cans
   items:
-    - - name: Bottled lager
+    - - name: Madri
         price: 350
         plus: [28]
+      - name: Birra Moretti
+        price: 350
+        plus: [17]
       - name: Guinness
         price: 500
         plus: [20]
