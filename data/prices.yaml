@@ -45,6 +45,9 @@
       - name: Guinness
         price: 500
         plus: [20]
+      - name: Heineken
+        price: 350
+        plus: [18]
       - name: Rekorderlig
         price: 500
         variants: [Wild Berry, Peach-Raspberry, Strawberry-Lime]
@@ -78,7 +81,7 @@
         size: 75cl
         variants: [Shiraz, Merlot]
         price: 1500
-        plus: [61, 63, 64, 65]
+        plus: [61, 63]
     - - name: White Wine
         size: 250ml
         variants: [Sauvignon Blanc, Pinot Grigio]
@@ -151,6 +154,9 @@
       - name: Britvic Orange
         price: 200
         plus: [198]
+      - name: Ginger Ale
+        price: 180
+        plus: [202]
 - name: Spirits and liqueurs
   items:
     - - name: Gordon's London Dry Gin
@@ -240,10 +246,6 @@
       - name: Malibu
         price: 230
         plus: [129]
-      - name: Martini
-        price: 250
-        plus: [130, 135, 138]
-        variants: [Bianco, Rosso, Extra Dry]
       - name: Pernod
         price: 230
         plus: [131]

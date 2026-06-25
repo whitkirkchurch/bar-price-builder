@@ -67,3 +67,5 @@ poetry run python app.py build
 ```
 
 to spit out PDF files into the `outputs` folder.
+
+This command also generates `outputs/prices.csv` with one row per listed item and columns for `name`, `price`, and `category`.

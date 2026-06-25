@@ -29,6 +29,7 @@ repos:
         additional_dependencies:
           - types-pytz
           - types-PyYAML
+          - types-requests
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
     rev: 0.37.3
