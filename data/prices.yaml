@@ -122,7 +122,7 @@
         alcohol_free: true
 - name: Soft drinks and mixers
   items:
-    - - name: Coke
+    - - name: Coca-cola
         price: 180
         plus: [193, 194, 195]
       - name: Lemonade
@@ -134,7 +134,7 @@
       - name: Appletiser
         price: 250
         plus: [199]
-      - name: Fruit Shoot
+      - name: Simply Fruity
         price: 140
         plus: [219, 220, 224]
       - name: Red Bull
@@ -279,4 +279,4 @@
   items:
     - name: Pringles
       price: 150
-      plus: [301]
+      plus: [10005, 10006, 10007, 10008, 10009]
