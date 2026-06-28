@@ -100,3 +100,75 @@ def test_build_item_upsert_payload_updates_only_target_variant_for_multi_variant
     # Non-target variant must keep its original data.
     assert by_variant_id["v-paprika"]["cost"] == 0.70
     assert by_variant_id["v-paprika"]["barcode"] == "5053990107308"
+
+
+def test_build_item_upsert_payload_rejects_snapshot_missing_item_name() -> None:
+    item_snapshot = {
+        "id": "item-1",
+        "variants": [
+            {
+                "variant_id": "v-original",
+                "sku": "10005",
+                "cost": 0.75,
+            },
+        ],
+    }
+
+    payload, error = build_item_upsert_payload(
+        item_snapshot=item_snapshot,
+        variant_id="v-original",
+        expected_plu=10005,
+        cost_pounds=0.81,
+    )
+
+    assert payload is None
+    assert "missing id or item_name" in error
+
+
+def test_build_item_upsert_payload_rejects_variant_sku_mismatch() -> None:
+    item_snapshot = {
+        "id": "item-1",
+        "item_name": "Pringles",
+        "variants": [
+            {
+                "variant_id": "v-original",
+                "sku": "99999",
+                "cost": 0.75,
+                "default_price": 2.5,
+            },
+        ],
+    }
+
+    payload, error = build_item_upsert_payload(
+        item_snapshot=item_snapshot,
+        variant_id="v-original",
+        expected_plu=10005,
+        cost_pounds=0.81,
+    )
+
+    assert payload is None
+    assert "Variant/SKU mismatch before update" in error
+
+
+def test_build_item_upsert_payload_rejects_missing_variant_id() -> None:
+    item_snapshot = {
+        "id": "item-1",
+        "item_name": "Pringles",
+        "variants": [
+            {
+                "variant_id": "v-original",
+                "sku": "10005",
+                "cost": 0.75,
+            },
+        ],
+    }
+
+    payload, error = build_item_upsert_payload(
+        item_snapshot=item_snapshot,
+        variant_id="v-missing",
+        expected_plu=10005,
+        cost_pounds=0.81,
+    )
+
+    assert payload is None
+    assert "Variant v-missing not found" in error

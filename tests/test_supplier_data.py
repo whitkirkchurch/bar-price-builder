@@ -43,6 +43,14 @@ class TestSupplierDataParsing:
         assert len(rows) == 1
         assert rows[0]["supplier_code"] == 10001
 
+    def test_parse_supplier_confirmation_rows_skips_invalid_price(self) -> None:
+        text = """
+        Quantity Code        Description      Size Pack Price   EAN code
+        1        10001       Vodka            1L   6    BAD     1234567890123
+        """
+        rows = parse_supplier_confirmation_rows(text)
+        assert rows == []
+
     def test_parse_supplier_confirmation_rows_handles_missing_header(self) -> None:
         text = """
         1        10001       Vodka            1L   6    12.50
@@ -114,6 +122,22 @@ class TestSupplierCodeMapping:
 
         try:
             with pytest.raises(ValueError, match="servings_per_unit must be > 0"):
+                get_supplier_code_entries(temp_path)
+        finally:
+            temp_path.unlink()
+
+    def test_get_supplier_code_entries_requires_complete_mapping_fields(self) -> None:
+        yaml_content = """items:
+  - supplier_code: 10001
+    mapping:
+      plu: 1001
+"""
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
+            f.write(yaml_content)
+            temp_path = Path(f.name)
+
+        try:
+            with pytest.raises(ValueError, match="mapping must include plu and servings_per_unit"):
                 get_supplier_code_entries(temp_path)
         finally:
             temp_path.unlink()
