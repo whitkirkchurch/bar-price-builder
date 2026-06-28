@@ -69,3 +69,46 @@ poetry run python app.py build
 to spit out PDF files into the `outputs` folder.
 
 This command also generates `outputs/prices.csv` with one row per listed item and columns for `name`, `price`, and `category`.
+
+### Updating Loyverse costs from supplier confirmations
+
+When you have a supplier order confirmation text file, you can calculate per-unit costs and optionally write costs to Loyverse.
+
+1. Save the confirmation text to a local file, for example `data/supplier_confirmation.txt`
+1. Update `data/supplier_data.yaml` to map each supplier code to exactly one PLU using `mapping.plu` and `mapping.servings_per_unit`
+1. Run a dry run first:
+
+```
+poetry run python app.py update-costs-from-supplier data/supplier_confirmation.txt
+```
+
+This fetches all till products from Loyverse, resolves PLUs to internal item/variant IDs, and calculates costs.
+
+The command now prints one line per mapped product showing:
+
+- Product/PLU name
+- Cost status (current and, when changed, new calculated cost)
+- EAN status (current and, when changed, supplier EAN)
+- `CHANGED` vs `UNCHANGED`
+
+New costs are rounded to 2 decimal places (pounds) before comparison and API writes, matching Loyverse cost precision.
+
+If a supplier code should be intentionally skipped (for example bulk ingredients that are costed elsewhere), set `ignore: true` on that entry in `data/supplier_data.yaml`.
+
+Ignored entries are reported in command output as:
+
+- `[IGNORED] Supplier <code> | <comment>`
+
+If `comment` is missing, the command falls back to the parsed supplier description and size.
+
+To apply changes to Loyverse via API, run:
+
+```
+poetry run python app.py update-costs-from-supplier data/supplier_confirmation.txt --apply
+```
+
+When `--apply` is used, API writes are only sent for rows where the cost has actually changed.
+
+EAN updates are also written when changed, but only for mappings where `servings_per_unit` is exactly `1`.
+
+You must have `LOYVERSE_PAT` set in your environment for API access.

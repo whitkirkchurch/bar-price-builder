@@ -14,12 +14,13 @@ python = "3.14.5"
 weasyprint = "^65.0"
 click = "8.4.2"
 jinja2 = "3.1.6"
-pyyaml = "6.0.3"
 pytz = "2026.2"
 requests = "^2.31.0"
+"ruamel.yaml" = "^0.18.6"
 
 [tool.poetry.group.dev.dependencies]
 json-schema-for-humans = "1.5.1"
+pytest = "^9.1.1"
 
 [tool.ruff]
 line-length = 120
@@ -29,6 +30,9 @@ ignore = ["E501", "G004", "PLR2004", "RUF005", "RUF012", "UP040"] # long lines, 
 extend-select = ["W", "B", "Q", "C90", "I", "UP", "YTT", "ASYNC", "S", "BLE", "A", "COM", "C4", "DTZ", "T10", "DJ", "EM", "EXE", "FA",
                  "ISC", "ICN", "G", "INP", "PIE", "T20", "PYI", "PT", "Q", "RSE", "RET", "SLF", "SLOT", "SIM", "TID", "TCH", "INT", "PTH",
                  "FIX", "PGH", "PL", "TRY", "FLY", "PERF", "RUF"]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**" = ["S101"]  # assert is correct in test files
 
 [tool.djlint]
 ignore="H030,H031"

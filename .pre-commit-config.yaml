@@ -28,7 +28,6 @@ repos:
       - id: mypy
         additional_dependencies:
           - types-pytz
-          - types-PyYAML
           - types-requests
 
   - repo: https://github.com/python-jsonschema/check-jsonschema
@@ -40,6 +39,9 @@ repos:
       - id: check-jsonschema
         files: ^data/prices.yaml$
         args: ["--schemafile", "data/schema/prices.schema.json"]
+      - id: check-jsonschema
+        files: ^data/supplier_data.yaml$
+        args: ["--schemafile", "data/schema/supplier_data.schema.json"]
 
   - repo: https://github.com/Riverside-Healthcare/djLint
     rev: v1.39.4
