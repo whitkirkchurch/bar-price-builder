@@ -80,6 +80,23 @@ class TestTillProductBuilding:
         products = build_till_products(items)
         assert products[1001]["barcode"] is None
 
+    def test_build_till_products_defaults_available_for_sale_when_stores_missing(self) -> None:
+        items = [
+            {
+                "id": "item-1",
+                "item_name": "Vodka",
+                "variants": [
+                    {
+                        "variant_id": "v-1",
+                        "sku": "1001",
+                        "default_price": 12.50,
+                    },
+                ],
+            },
+        ]
+        products = build_till_products(items)
+        assert products[1001]["available_for_sale"] is True
+
     def test_build_till_products_treats_missing_default_price_as_unset(self) -> None:
         items = [
             {
@@ -142,3 +159,7 @@ class TestVariantCostExtraction:
     def test_extract_variant_cost_pence_returns_none_for_invalid(self) -> None:
         variant = {"cost": "not-a-number"}
         assert extract_variant_cost_pence(variant) is None
+
+    def test_extract_variant_cost_pence_falls_back_after_invalid_higher_priority_field(self) -> None:
+        variant = {"cost": "not-a-number", "purchase_price": 0.40}
+        assert extract_variant_cost_pence(variant) == 40.0
