@@ -1170,14 +1170,14 @@ zstd = ["backports-zstd (>=1.0.0) ; python_version < \"3.14\""]
 
 [[package]]
 name = "weasyprint"
-version = "68.0"
+version = "68.1"
 description = "The Awesome Document Factory"
 optional = false
 python-versions = ">=3.10"
 groups = ["main"]
 files = [
-    {file = "weasyprint-68.0-py3-none-any.whl", hash = "sha256:c2cb40c71b50837c5971f00171c9e4078e8c9912dd7c217f3e90e068f11e8aa1"},
-    {file = "weasyprint-68.0.tar.gz", hash = "sha256:447f40898b747cb44ac31a5d493d512e7441fd56e13f63744c099383bbf9cda9"},
+    {file = "weasyprint-68.1-py3-none-any.whl", hash = "sha256:4dc3ba63c68bbbce3e9617cb2226251c372f5ee90a8a484503b1c099da9cf5be"},
+    {file = "weasyprint-68.1.tar.gz", hash = "sha256:d3b752049b453a5c95edb27ce78d69e9319af5a34f257fa0f4c738c701b4184e"},
 ]
 
 [package.dependencies]
@@ -1234,4 +1234,4 @@ test = ["pytest"]
 [metadata]
 lock-version = "2.1"
 python-versions = "3.14.6"
-content-hash = "49a5a7b0971eb90e5bce96e028b6d78550e2f1dc10bda6b247a4692f0db9fb6a"
+content-hash = "57572d82687d52c3921d5a00e8ba056b867f281e6d279f9e21aec09c7528a884"
