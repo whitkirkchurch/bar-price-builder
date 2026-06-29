@@ -112,3 +112,28 @@ When `--apply` is used, API writes are only sent for rows where the cost has act
 EAN updates are also written when changed, but only for mappings where `servings_per_unit` is exactly `1`.
 
 You must have `LOYVERSE_PAT` set in your environment for API access.
+
+### Building product images for Loyverse
+
+Generate local PNG images for all on-sale products from Loyverse.
+
+1. Configure styling defaults and per-product ID overrides in `data/products.yaml` (for example `background_color`)
+   - You can define reusable colours under `palette` and reference them by name (e.g. `slate_night`) or `$name` (e.g. `$slate_night`)
+2. Build local images first (dry-run):
+
+```
+poetry run python app.py build-product-images
+```
+
+This writes PNG files to `outputs/product-images` by default.
+
+During each run, the command fetches all items from Loyverse (same bulk item fetch pattern as other operations), filters to on-sale products, and seeds any new product IDs into `data/products.yaml` under `product_id_overrides` with inline comments for item names.
+
+To upload generated images to Loyverse, run with `--write`:
+
+```
+poetry run python app.py build-product-images --write
+```
+
+In `--write` mode, images are uploaded directly to each Loyverse item ID.
+`LOYVERSE_PAT` must be set for uploads.
