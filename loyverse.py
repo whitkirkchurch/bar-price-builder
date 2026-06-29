@@ -46,6 +46,14 @@ def get_loyverse_headers() -> dict[str, str]:
     }
 
 
+def get_loyverse_auth_headers() -> dict[str, str]:
+    loyverse_pat = getenv("LOYVERSE_PAT")
+    if not loyverse_pat:
+        msg = "LOYVERSE_PAT environment variable is not set"
+        raise ValueError(msg)
+    return {"Authorization": f"Bearer {loyverse_pat}"}
+
+
 def get_loyverse_items() -> list[dict]:
     items = []
     cursor = None
@@ -326,3 +334,22 @@ def update_loyverse_cost(
         return False, request_error
 
     return _validate_upsert_response(response, item_snapshot, variant_id, expected_plu)
+
+
+def upload_item_image(item_id: str, image_bytes: bytes) -> tuple[bool, str]:
+    endpoint = f"{LOYVERSE_API_BASE_URL}/items/{item_id}/image"
+    headers = {
+        **get_loyverse_auth_headers(),
+        "Content-Type": "image/png",
+    }
+
+    try:
+        response = requests.post(endpoint, headers=headers, data=image_bytes, timeout=30)
+    except requests.RequestException as exc:
+        return False, f"POST {endpoint} -> exception {exc}"
+
+    if response.ok:
+        return True, "uploaded"
+
+    body_preview = response.text.strip().replace("\n", " ")[:300]
+    return False, f"POST {endpoint} -> {response.status_code} {body_preview}"
