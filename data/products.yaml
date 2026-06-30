@@ -1,0 +1,414 @@
+palette:
+  black: "#0A0A0A"
+  dark_grey: "#393939"
+  white: "#FDFDFD"
+  barbie: "#E0218A"
+  lemon: "#FFF44F"
+  rose: "#F7879A"
+  blackcurrant: "#2E183B"
+  red: "#F00C0C"
+  teal: "#008080"
+  royal_blue: "#4169E1"
+  forest_green: "#274F31"
+  medium_green: "#508a3d"
+  bright_green: "#87c971"
+  straw: "#F0E1BF"
+  orange: "#E06E04"
+  coke_red: "#E61D2B"
+  purple: "#A000C8"
+  sky_blue: "#82C8E5"
+  red_wine: "#2F0000"
+  gold: "#D2B450"
+  bottle_brown: "#6B3F1F"
+  light_grey: "#BCBCBC"
+  peach: "#FFE5B4"
+
+icons:
+  apple:
+    icon: U+F5D1
+  beer-mug:
+    icon: U+E0B3
+  blueberries:
+    icon: U+E2E8
+  box:
+    icon: U+F466
+  bottle:
+    icon: U+E4C4
+  can:
+    icon: U+E3E6
+  champagne-glass:
+    icon: U+F79E
+  champagne-glasses:
+    icon: U+F79F
+  citrus-slice:
+    icon: U+E2F5
+  glass:
+    icon: U+F804
+  glass-half:
+    icon: U+F804
+    scale: 0.5
+  lemon:
+    icon: U+F094
+  gin-glass:
+    icon: U+F561
+  mixer-bottle:
+    icon: U+E4C4
+    scale: 0.75
+    tilted: true
+  mustache:
+    icon: U+E5BC
+  water-bottle:
+    icon: U+E4C5
+  whisky-glass:
+    icon: U+F7A0
+  whisky-glass-ice:
+    icon: U+F7A1
+  wine-bottle:
+    icon: U+F72F
+  wine-glass:
+    icon: U+F4E3
+
+defaults:
+  width: 800
+  height: 800
+  background_colour: white
+  text_colour: dark_grey
+  icon_font_path: fonts/solid.otf
+
+flags:
+  af:
+    text: AF
+    value: royal_blue
+
+# Optional override for where generated images are written.
+# If relative, path is resolved from repository root.
+# output_dir: outputs/product-images
+
+# Optional per-product style overrides.
+# New product IDs are seeded here automatically from Loyverse on-sale products.
+# Per-product icon example:
+#  some-item-id:
+#    icon: guinness
+#    scale: 0.5 # optional; scales icon to 50% of fitted size
+product_id_overrides:
+  c853bf0e-d5a8-40d7-850e-9b2afc316b5c: {} # Amontillados Sherry
+  3db7c399-5404-465e-ab49-e0af28e75c7c: {} # Appletiser
+  76a84867-ae36-462d-b825-d8248aeb72cf: {} # Archers
+  7c9b5218-b31d-43f1-b888-044d871694a0: {} # Baby Guinness
+  a90fab61-ff96-40f7-99f4-49beff70a316: # Bacardi
+    icon: whisky-glass
+  d9f3af73-7c35-4edd-aa2a-d28116324137: # Bacardi 8
+    icon: whisky-glass-ice
+    background_colour: orange
+    text_colour: straw
+  2c0ae022-7dde-4369-9799-1c0aa5f2df44: {} # Baileys
+  e6342cb6-a761-4074-b4b4-19fe576ea870: # Beefeater Blood Orange
+    icon: gin-glass
+    background_colour: orange
+    text_colour: white
+  8f4315ba-d3f0-46eb-8be7-14290bef79d1: # Beefeater Pink Strawberry
+    icon: gin-glass
+    background_colour: barbie
+    text_colour: white
+  69af0a08-d602-4e15-b90a-08c1d9ea6240: # Bell's
+    icon: whisky-glass-ice
+    background_colour: orange
+    text_colour: purple
+    highlight_colour: white
+  15fe4c6d-1aec-4b7a-8923-11f9ec266f3f: # Birra Moretti
+    icon: bottle
+    background_colour: straw
+    text_colour: red
+    highlight_colour: medium_green
+  ef6ccf4e-3338-4dd3-bccc-8959d7661cbc: # Bitter Lemon
+    icon: mixer-bottle
+  81eb00f1-89c5-4b5a-98c6-ae0d8c3a61da: # Black Sheep Ale (Half)
+    background_colour: black
+    text_colour: white
+    icon: glass-half
+  d0cf5d62-e52c-423a-a4cf-7f1ae109491c: # Black Sheep Ale (Pint)
+    background_colour: black
+    text_colour: white
+    icon: glass
+  0bd33861-8e07-49f7-8ac8-741073e7dcb7: # Bombay Sapphire Gin
+    icon: gin-glass
+    background_colour: sky_blue
+    text_colour: white
+  12e43685-dee1-4746-9fc7-298cc6eb9770: {} # Bristol Cream Sherry
+  2550031e-7f05-4597-8ed1-f2719d823d08: # Britvic Orange
+    icon: mixer-bottle
+  0d85ae39-32e1-49a6-89bc-eee7bdb0ce5b: # Brockman's Gin
+    icon: gin-glass
+    background_colour: black
+    text_colour: white
+    highlight_colour: red
+  a7478584-9f6c-4244-a04d-a550061b7730: {} # Campari
+  aaec9472-2b10-43d9-80dd-d371fa1115c1: {} # Captain Morgan Spiced Rum
+  86edd7d4-6a09-46b0-b2ba-ffb623fdcd94: # Church Hospitality Package
+    icon: box
+  3b855b82-8c15-4118-b4bf-bd6cf8673ceb: # Coca-Cola
+    background_colour: coke_red
+    text_colour: white
+  c6fd9c02-6aa1-42db-8df7-3c0a9817bf87: {} # Cointreau
+  079c9b01-c300-4790-9904-648c8d91f66c: # Coke Zero
+    background_colour: coke_red
+    text_colour: "#000000"
+  e500e045-1cef-4382-880f-33753e03c771: # Cold River Cider (Half)
+    background_colour: teal
+    text_colour: white
+    icon: glass-half
+  bab97246-d46c-40ed-ab19-bd7d7708a0b0: # Cold River Cider (Pint)
+    background_colour: teal
+    text_colour: white
+    icon: glass
+  b5a18520-287a-4743-8197-700870281951: # Coors (Half)
+    text_colour: red
+    icon: glass-half
+  1448c8ed-1535-479c-9ae8-90e5c4a594bf: # Coors (Pint)
+    text_colour: red
+    icon: glass
+  cc556079-e273-4305-8c8f-b8b2752171dc: {} # Cordial Dash
+  3f6162f6-f889-4b55-97df-dea53d3b10ee: {} # Cordial Glass
+  3ffc0dd3-e770-488d-a2a8-cf00a9e30541: {} # Courvoisier
+  66d23850-b4df-4c98-b73b-1625e6b9050e: # Diet Coke
+    background_colour: light_grey
+    text_colour: coke_red
+  8644b390-997f-4f3d-882b-47072c36b77a: {} # Disaronno
+  75201737-e4af-4de8-9175-0682960fe050: # Drinks Package
+    icon: box
+  8eee5ce7-0c05-48e4-8d01-a3b2a84e75de: {} # El Sueno Gold
+  27c4fcbf-6cc1-4355-be8a-783049549f09: {} # El Sueno Silver
+  c2042c59-aed1-457c-a3e7-d5541a623a2d: # Erdinger Alkoholfrei
+    icon: bottle
+    flags:
+      - af
+    background_colour: royal_blue
+    text_colour: gold
+  90a247fe-5c01-4b28-ac0e-c23c940335a4: # Fever Tree Tonic
+    icon: mixer-bottle
+    background_colour: lemon
+    text_colour: light_grey
+  e7949a59-73a6-49cf-b4e0-8a6045210202: # Fever Tree Tonic (Light)
+    icon: mixer-bottle
+    background_colour: light_grey
+    text_colour: sky_blue
+  f5dbbaa6-f617-4481-8e9c-6ed51c6e7640: # Fever Tree Tonic (Mediterranean)
+    icon: mixer-bottle
+    background_colour: sky_blue
+    text_colour: light_grey
+  7f10824d-942b-4ad2-a76b-e164d4208832: {} # Fireball Whiskey
+  30f14799-1b59-4fcd-ab6a-42336b1ddf62: {} # Fresh Apple
+  5176677f-96fe-4235-9edd-bea8eeb9eb68: {} # Fresh Orange
+  e2332401-5e18-4d42-bde2-9a958900f1d4: # Ginger Ale
+    icon: mixer-bottle
+    background_colour: orange
+    text_colour: light_grey
+  56c2e0bc-3b4f-4f2e-ac81-61d6ea5ee611: # Glenfiddich 12yr
+    icon: whisky-glass-ice
+  cac58f1b-4a9a-4e51-bd49-e3f639932caf: # Gordon's 0.0
+    icon: gin-glass
+    background_colour: medium_green
+    text_colour: sky_blue
+    flags:
+      - af
+  536695ac-6cab-47b9-8bfe-9873035e12b4: # Gordon's Gin
+    icon: gin-glass
+    background_colour: medium_green
+    text_colour: white
+  d3a42373-214e-4c0f-85b5-52ec9ddc1493: # Gordon's Pink Gin
+    background_colour: barbie
+    text_colour: white
+    icon: gin-glass
+  6cbe2e82-e79c-488b-8b9e-e5bec32eb5e7: # Gordon's Sicilian Lemon
+    background_colour: lemon
+    icon: gin-glass
+  357f0bad-6f5e-4831-90db-b172206f1892: # Guinness
+    icon: can
+    background_colour: black
+    text_colour: gold
+  8fd30c42-480c-49ef-9226-23d6079f33ea: # Guinness 0.0
+    icon: can
+    background_colour: black
+    text_colour: sky_blue
+    flags:
+      - af
+  08550cd5-020c-4461-bf9a-2f6cb24f20d8: # Harrogate Spring Water (Sparkling)
+    icon: water-bottle
+    background_colour: light_grey
+    text_colour: black
+  95df91d3-aa45-4042-97a3-6aa419ca32f7: # Harrogate Spring Water (Still)
+    icon: water-bottle
+    background_colour: black
+    text_colour: white
+  7233c8f1-023c-49ae-a6d0-28ac9772a7f4: # Heineken 0.0
+    icon: bottle
+    flags:
+      - af
+    background_colour: medium_green
+    text_colour: royal_blue
+  c42e1542-5a67-4cdb-953c-70d2f06ad935: {} # J2O Apple & Raspberry
+  9adea6d1-37e9-48b3-ba26-02e2379a1110: {} # J2O Orange & Passionfruit
+  beb7a415-78e9-4eb6-9ad3-f59d8878b614: # Jack Daniel's
+    icon: whisky-glass
+    background_colour: orange
+    text_colour: white
+    highlight_colour: black
+  c320dd1f-7607-4e94-9a8d-5938f0fa9a42: {} # Jagermeister
+  0a44f526-0852-43b8-a36a-64e17392bf34: {} # Jose Cuervo Especial Tequila
+  ea10b427-2f37-451c-8ab3-25c07c597835: {} # Lamb's Navy Rum
+  0c087693-c8d8-4b6f-b6ee-d943f3398989: # Laphroaig 10
+    icon: whisky-glass-ice
+  bb273193-ae68-468d-9061-5dfbdd5bd621: # Lemonade
+    icon: lemon
+    background_colour: royal_blue
+    text_colour: lemon
+  364a4e2a-7aaf-45c1-92ec-cb13af984b7f: # MacCallen Gold
+    icon: whisky-glass-ice
+  58715bca-e34e-465b-8d79-a77c89daadbf: # Madri
+    icon: bottle
+    background_colour: red
+    text_colour: white
+  decee1f1-6bbf-4456-b273-7777c16425b2: {} # Malibu
+  bd0d20a0-c999-4f8e-9049-0fb131bd07ca: # Mason's Tea Gin
+    icon: gin-glass
+  519dee66-9998-4b74-b121-0db0f2027622: # Merlot (Large)
+    icon: wine-bottle
+    background_colour: red_wine
+    text_colour: red
+  0e89cfbd-37ef-450e-8d9f-ee8017cc6320: # Merlot (Small)
+    icon: wine-glass
+    background_colour: red_wine
+    text_colour: red
+  9260779c-30e5-4bb3-a4ec-701d7c634721: {} # Messerschmidt
+  e4b883a4-466b-4e1e-b2b1-7e391c443f7e: # Nosecco (Bottle)
+    icon: champagne-glasses
+    text_colour: straw
+    flags:
+      - af
+  3ade4a3a-156a-404f-8ee7-7c8e212fad42: # Nosecco (Glass)
+    icon: champagne-glass
+    text_colour: straw
+    flags:
+      - af
+  3d21a6b7-e7a0-460f-bbef-6b700617d3a6: # Old Mout Berries & Cherries 0.0
+    icon: bottle
+    background_colour: bottle_brown
+    text_colour: straw
+    flags:
+      - af
+  49df2e82-cb85-4401-b6d4-65607ecbb807: {} # Pernod
+  3ddb41f3-1935-494d-afa7-7a6535ac4198: {} # Pimm's Glass
+  fdef5a07-0ff3-49b3-9c19-bdb59bc9f062: {} # Pimm's Pitcher
+  5e407e42-25a7-4090-8368-f575a97f1bfa: # Pinot Grigio (Large)
+    icon: wine-bottle
+    background_colour: straw
+    text_colour: bright_green
+  d47413b8-6e3c-4fc9-974a-a46e93e52911: # Pinot Grigio (Small)
+    icon: wine-glass
+    background_colour: straw
+    text_colour: bright_green
+  5f27b647-fc1c-4c5a-b28d-fa9aef1f143a: {} # Port
+  cc8d1f44-1292-496f-b14e-c30f01073b97: # Pringles
+    icon: mustache
+    background_colour: red
+    text_colour: white
+  da323d76-8205-42db-956f-68a75f02460d: # Prosecco (Large)
+    icon: champagne-glasses
+    text_colour: straw
+  17099f06-45b3-4bb1-80e4-ea2eb612ecce: # Prosecco (Small)
+    icon: champagne-glass
+    text_colour: straw
+  d914dea5-612d-4c4d-9bfc-3de5de2f1bb0: # Red Bull
+    icon: can
+    background_colour: light_grey
+    text_colour: red
+    highlight_colour: royal_blue
+  f9c23afa-b2a7-466c-80c0-2f056116cc06: # Rekorderlig Mango
+    icon: bottle
+    text_colour: lemon
+  fa08be59-8eb4-4eb4-8b5b-3cc019fbc176: # Rekorderlig Peach & Raspberry
+    icon: bottle
+    text_colour: peach
+  59f9b6eb-0018-4ed1-9bfd-0def59b480fa: # Rekorderlig Strawberry & Lime
+    icon: bottle
+    text_colour: red
+  86e4952f-e46a-4681-bec6-deeaea8e33bd: # Rekorderlig Wild Berries
+    icon: bottle
+    text_colour: purple
+  78fc5af7-aa9f-4a5f-b205-71fdbbcfde12: # Rosé (Large)
+    background_colour: rose
+    text_colour: white
+    icon: wine-bottle
+  f0e0cc10-2583-4ce5-a9b5-e5bbcad91c3b: # Rosé (Small)
+    background_colour: rose
+    text_colour: white
+    icon: wine-glass
+  ea0a408a-46ab-4bda-ae96-a58dc38150b9: {} # Sambuca
+  eece4671-82c0-4056-96f0-54065df9a69e: # Sauvignon Blanc (Large)
+    background_colour: straw
+    text_colour: sky_blue
+    icon: wine-bottle
+  208f02f7-b45d-4f7b-be23-e39fa2a5175d: # Sauvignon Blanc (Small)
+    background_colour: straw
+    text_colour: sky_blue
+    icon: wine-glass
+  3a14aabc-eeea-45cb-a7ea-ff822751979a: # Shiraz (Large)
+    icon: wine-bottle
+    background_colour: red_wine
+    text_colour: purple
+  e42110fa-5b5f-42be-ab1d-20b43c81276d: # Shiraz (Small)
+    icon: wine-glass
+    background_colour: red_wine
+    text_colour: purple
+  de1c6c00-fcc0-45fd-b7e7-987550bdeabf: # Simply Fruity Apple
+    icon: apple
+    background_colour: bright_green
+    text_colour: medium_green
+  fae6a06f-a885-4e4e-8cd8-d86bf5179678: # Simply Fruity Blackcurrant
+    background_colour: blackcurrant
+    text_colour: medium_green
+    icon: blueberries
+  46d34e86-96a4-43c3-be81-55da44c3b8b3: # Simply Fruity Orange
+    icon: citrus-slice
+    background_colour: orange
+    text_colour: medium_green
+  09af57c7-ca85-4da6-8721-5e0c5a3effc2: # Smirnoff Vodka
+    icon: whisky-glass
+    background_colour: white
+    text_colour: red
+  ac274004-e714-438e-b8f0-3d693c73cd23: # Soda Water
+    icon: mixer-bottle
+  6a5e25f3-2ea2-48dc-9e3e-aee47f138c50: {} # Sourz Apple
+  671a1e33-4fdb-4e43-8df5-d2f71511e803: {} # Sourz Cherry
+  44e4760d-a724-465f-b1dc-8fe30988844c: # Southern Comfort
+    icon: whisky-glass-ice
+  9f19d736-39b8-4413-8658-cf1918c896dd: # Staropramen (Half)
+    icon: beer-mug
+    scale: 0.5
+    background_colour: straw
+    text_colour: forest_green
+  684fabd3-a816-4cf0-842e-c29769b094f8: # Staropramen (Pint)
+    icon: beer-mug
+    background_colour: straw
+    text_colour: forest_green
+  e9ab2528-33af-48c5-b68a-f8f152230e7d: # Tanqueray No 10 Gin
+    icon: gin-glass
+    background_colour: bright_green
+    text_colour: white
+  48aa1e8c-6394-42c9-b125-26a60d90cf31: # Tequila Rose
+    background_colour: black
+    text_colour: white
+    highlight_colour: barbie
+  70076fe7-c38c-4fa2-8c1a-5c29f17d030c: {} # Tia Maria
+  df597e1d-01d9-4c35-b58e-f24a27ce1871: # Whitley Neill Rhubarb & Ginger
+    icon: gin-glass
+    text_colour: white
+    background_colour: purple
+  4c7cad40-4553-4932-b0e9-66bc1077851c: # Whitley Neill Rhubarb & Ginger 0.0
+    icon: gin-glass
+    flags:
+      - af
+    text_colour: sky_blue
+    background_colour: purple
+  0def3bd3-197e-4c75-9f05-ea193ece3c03: # Heineken (Can)
+    icon: can

@@ -11,6 +11,7 @@ from price_check import (
     warn_for_ignored_plus_not_on_till,
 )
 from price_list import get_all_plus_in_price_list
+from product_images import print_product_image_summary, run_product_image_sync
 from rendering import build_price_list_pdfs
 from supplier_updates import print_supplier_update_summary, run_supplier_cost_updates
 
@@ -81,6 +82,34 @@ def update_costs_from_supplier(
         return
 
     print_supplier_update_summary(summary, apply)
+
+
+@cli.command("build-product-images")
+@click.option(
+    "--products-file",
+    type=click.Path(exists=True, path_type=Path),
+    default=DATA_DIR / "products.yaml",
+    show_default=True,
+    help="YAML file defining product image defaults and per-product ID overrides.",
+)
+@click.option(
+    "--write",
+    is_flag=True,
+    help="Upload generated images to Loyverse. Without this flag, command only builds local images.",
+)
+def build_product_images(products_file: Path, write: bool) -> None:
+    click.echo("Building product images…")
+    try:
+        summary = run_product_image_sync(products_file=products_file, write=write)
+    except ValueError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        return
+    except requests.RequestException as exc:
+        click.echo(click.style(f"API Error: {exc}", fg="red"), err=True)
+        return
+
+    print_product_image_summary(summary, write)
+    click.echo(click.style("Done!", fg="green"))
 
 
 if __name__ == "__main__":
