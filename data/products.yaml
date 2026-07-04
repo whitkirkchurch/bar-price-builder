@@ -1,27 +1,29 @@
 palette:
-  black: "#0A0A0A"
-  dark_grey: "#393939"
-  white: "#FDFDFD"
   barbie: "#E0218A"
-  lemon: "#FFF44F"
-  rose: "#F7879A"
+  black: "#0A0A0A"
   blackcurrant: "#2E183B"
-  red: "#F00C0C"
-  teal: "#008080"
-  royal_blue: "#4169E1"
-  forest_green: "#274F31"
-  medium_green: "#508a3d"
-  bright_green: "#87c971"
-  straw: "#F0E1BF"
-  orange: "#E06E04"
-  coke_red: "#E61D2B"
-  purple: "#A000C8"
-  sky_blue: "#82C8E5"
-  red_wine: "#2F0000"
-  gold: "#D2B450"
+  blood_orange: "#FE4B03"
   bottle_brown: "#6B3F1F"
+  bright_green: "#87c971"
+  coke_red: "#E61D2B"
+  dark_grey: "#393939"
+  forest_green: "#274F31"
+  gold: "#D2B450"
+  lemon: "#FFF44F"
   light_grey: "#BCBCBC"
+  medium_green: "#508a3d"
+  orange: "#FF8A00"
   peach: "#FFE5B4"
+  purple: "#A000C8"
+  red_wine: "#2F0000"
+  red: "#F00C0C"
+  rose: "#F7879A"
+  royal_blue: "#4169E1"
+  sky_blue: "#82C8E5"
+  straw: "#F0E1BF"
+  teal: "#008080"
+  whisky: "#E06E04"
+  white: "#FDFDFD"
 
 icons:
   apple:
@@ -92,27 +94,33 @@ flags:
 #    scale: 0.5 # optional; scales icon to 50% of fitted size
 product_id_overrides:
   c853bf0e-d5a8-40d7-850e-9b2afc316b5c: {} # Amontillados Sherry
-  3db7c399-5404-465e-ab49-e0af28e75c7c: {} # Appletiser
-  76a84867-ae36-462d-b825-d8248aeb72cf: {} # Archers
+  3db7c399-5404-465e-ab49-e0af28e75c7c: # Appletiser
+    icon: apple
+    background_colour: bright_green
+    text_colour: white
+  76a84867-ae36-462d-b825-d8248aeb72cf: # Archers
+    background_colour: white
+    text_colour: red
+    highlight_colour: peach
   7c9b5218-b31d-43f1-b888-044d871694a0: {} # Baby Guinness
-  a90fab61-ff96-40f7-99f4-49beff70a316: # Bacardi
-    icon: whisky-glass
+  a90fab61-ff96-40f7-99f4-49beff70a316: {} # Bacardi
   d9f3af73-7c35-4edd-aa2a-d28116324137: # Bacardi 8
-    icon: whisky-glass-ice
-    background_colour: orange
+    background_colour: whisky
     text_colour: straw
-  2c0ae022-7dde-4369-9799-1c0aa5f2df44: {} # Baileys
+  2c0ae022-7dde-4369-9799-1c0aa5f2df44: # Baileys
+    background_colour: black
+    text_colour: gold
+    highlight_colour: bright_green
   e6342cb6-a761-4074-b4b4-19fe576ea870: # Beefeater Blood Orange
     icon: gin-glass
-    background_colour: orange
+    background_colour: blood_orange
     text_colour: white
   8f4315ba-d3f0-46eb-8be7-14290bef79d1: # Beefeater Pink Strawberry
     icon: gin-glass
     background_colour: barbie
     text_colour: white
   69af0a08-d602-4e15-b90a-08c1d9ea6240: # Bell's
-    icon: whisky-glass-ice
-    background_colour: orange
+    background_colour: whisky
     text_colour: purple
     highlight_colour: white
   15fe4c6d-1aec-4b7a-8923-11f9ec266f3f: # Birra Moretti
@@ -137,6 +145,9 @@ product_id_overrides:
   12e43685-dee1-4746-9fc7-298cc6eb9770: {} # Bristol Cream Sherry
   2550031e-7f05-4597-8ed1-f2719d823d08: # Britvic Orange
     icon: mixer-bottle
+    background_colour: orange
+    text_colour: black
+    highlight_colour: white
   0d85ae39-32e1-49a6-89bc-eee7bdb0ce5b: # Brockman's Gin
     icon: gin-glass
     background_colour: black
@@ -201,10 +212,9 @@ product_id_overrides:
   5176677f-96fe-4235-9edd-bea8eeb9eb68: {} # Fresh Orange
   e2332401-5e18-4d42-bde2-9a958900f1d4: # Ginger Ale
     icon: mixer-bottle
-    background_colour: orange
+    background_colour: whisky
     text_colour: light_grey
-  56c2e0bc-3b4f-4f2e-ac81-61d6ea5ee611: # Glenfiddich 12yr
-    icon: whisky-glass-ice
+  56c2e0bc-3b4f-4f2e-ac81-61d6ea5ee611: {} # Glenfiddich 12
   cac58f1b-4a9a-4e51-bd49-e3f639932caf: # Gordon's 0.0
     icon: gin-glass
     background_colour: medium_green
@@ -246,29 +256,33 @@ product_id_overrides:
       - af
     background_colour: medium_green
     text_colour: royal_blue
-  c42e1542-5a67-4cdb-953c-70d2f06ad935: {} # J2O Apple & Raspberry
-  9adea6d1-37e9-48b3-ba26-02e2379a1110: {} # J2O Orange & Passionfruit
-  beb7a415-78e9-4eb6-9ad3-f59d8878b614: # Jack Daniel's
-    icon: whisky-glass
+  c42e1542-5a67-4cdb-953c-70d2f06ad935: # J2O Apple & Raspberry
+    background_colour: purple
+    text_colour: bright_green
+  9adea6d1-37e9-48b3-ba26-02e2379a1110: # J2O Orange & Passionfruit
     background_colour: orange
+    text_colour: black
+  beb7a415-78e9-4eb6-9ad3-f59d8878b614: # Jack Daniel's
+    background_colour: whisky
     text_colour: white
     highlight_colour: black
   c320dd1f-7607-4e94-9a8d-5938f0fa9a42: {} # Jagermeister
   0a44f526-0852-43b8-a36a-64e17392bf34: {} # Jose Cuervo Especial Tequila
   ea10b427-2f37-451c-8ab3-25c07c597835: {} # Lamb's Navy Rum
-  0c087693-c8d8-4b6f-b6ee-d943f3398989: # Laphroaig 10
-    icon: whisky-glass-ice
+  0c087693-c8d8-4b6f-b6ee-d943f3398989: {} # Laphroaig 10
   bb273193-ae68-468d-9061-5dfbdd5bd621: # Lemonade
     icon: lemon
     background_colour: royal_blue
     text_colour: lemon
-  364a4e2a-7aaf-45c1-92ec-cb13af984b7f: # MacCallen Gold
-    icon: whisky-glass-ice
+  364a4e2a-7aaf-45c1-92ec-cb13af984b7f: {} # MacCallen Gold
   58715bca-e34e-465b-8d79-a77c89daadbf: # Madri
     icon: bottle
     background_colour: red
     text_colour: white
-  decee1f1-6bbf-4456-b273-7777c16425b2: {} # Malibu
+  decee1f1-6bbf-4456-b273-7777c16425b2: # Malibu
+    background_colour: white
+    text_colour: red
+    highlight_colour: lemon
   bd0d20a0-c999-4f8e-9049-0fb131bd07ca: # Mason's Tea Gin
     icon: gin-glass
   519dee66-9998-4b74-b121-0db0f2027622: # Merlot (Large)
@@ -329,6 +343,7 @@ product_id_overrides:
   fa08be59-8eb4-4eb4-8b5b-3cc019fbc176: # Rekorderlig Peach & Raspberry
     icon: bottle
     text_colour: peach
+    highlight_colour: orange
   59f9b6eb-0018-4ed1-9bfd-0def59b480fa: # Rekorderlig Strawberry & Lime
     icon: bottle
     text_colour: red
@@ -373,7 +388,6 @@ product_id_overrides:
     background_colour: orange
     text_colour: medium_green
   09af57c7-ca85-4da6-8721-5e0c5a3effc2: # Smirnoff Vodka
-    icon: whisky-glass
     background_colour: white
     text_colour: red
   ac274004-e714-438e-b8f0-3d693c73cd23: # Soda Water
@@ -381,7 +395,9 @@ product_id_overrides:
   6a5e25f3-2ea2-48dc-9e3e-aee47f138c50: {} # Sourz Apple
   671a1e33-4fdb-4e43-8df5-d2f71511e803: {} # Sourz Cherry
   44e4760d-a724-465f-b1dc-8fe30988844c: # Southern Comfort
-    icon: whisky-glass-ice
+    background_colour: whisky
+    text_colour: black
+    highlight_colour: straw
   9f19d736-39b8-4413-8658-cf1918c896dd: # Staropramen (Half)
     icon: beer-mug
     scale: 0.5

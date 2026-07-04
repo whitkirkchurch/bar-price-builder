@@ -456,6 +456,15 @@ def test_initials_from_name_handles_multi_word() -> None:
     assert product_images._initials_from_name("Gordon's Pink Gin") == "GPG"
 
 
+def test_initials_from_name_preserves_number_token_in_later_word() -> None:
+    assert product_images._initials_from_name("Laphroaig 10") == "L10"
+    assert product_images._initials_from_name("Glenfiddich 12") == "G12"
+
+
+def test_initials_from_name_preserves_number_token_when_first_word_has_digit() -> None:
+    assert product_images._initials_from_name("J2O Apple & Raspberry") == "J2O"
+
+
 def test_initials_from_name_handles_empty_name() -> None:
     assert product_images._initials_from_name("  ") == "?"
 

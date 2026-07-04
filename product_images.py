@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import Any
 
 import click
-from PIL import Image, ImageColor, ImageDraw, ImageFont
+from PIL import Image, ImageColor, ImageDraw, ImageFilter, ImageFont
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 
@@ -22,6 +22,17 @@ YAML_RT.preserve_quotes = True
 SAFE_MARGIN_TOP_PCT = 0.12
 SAFE_MARGIN_SIDE_PCT = 0.04
 SAFE_MARGIN_BOTTOM_CLEAR_PCT = 0.42
+
+DEFAULT_HIGHLIGHT_COLOR = "#FFFFFF"
+FLAG_VARIANT_TEXT = "+"
+FLAG_VARIANT_COLOR = "#2e7d32"
+FLAG_RIGHT_MARGIN_REDUCTION_PCT = 0.02
+FLAG_TOP_MARGIN_REDUCTION_PCT = 0.02
+FLAG_LEFT_PAD_MULTIPLIER = 1.5
+FLAG_MULTI_REVEAL_MULTIPLIER = 2
+HIGHLIGHT_STRIPE_HEIGHT_PCT = 0.12
+OUTER_BORDER_WIDTH = 12  # Outer border stroke width (text color based)
+INNER_BORDER_WIDTH = 6  # Inner border stroke width (background color based)
 
 
 @dataclass(frozen=True)
@@ -66,8 +77,18 @@ class TiltedIconRenderParams:
     text_height: float
     text_x: float
     text_y: float
-    text_stroke_width: int
-    text_stroke_color: str
+    text_color: str
+    background_color: str
+    text_is_lighter: bool
+    image_width: int
+    image_height: int
+
+
+@dataclass(frozen=True)
+class StyleAssets:
+    palette: dict[str, str]
+    icons: dict[str, dict[str, str | float | bool | None]]
+    flag_definitions: dict[str, tuple[str, str]]
 
 
 def _load_products_config(products_file: Path) -> dict[str, Any]:
@@ -125,6 +146,368 @@ def _darken_color(color: str, amount: float = 0.6) -> str:
         int(blue * multiplier),
     )
     return f"#{darkened[0]:02x}{darkened[1]:02x}{darkened[2]:02x}"
+
+
+def _relative_luminance(color: str) -> float:
+    """
+    Calculate the relative luminance of a color according to WCAG 2.0.
+
+    Formula from: https://www.w3.org/TR/WCAG20/#relativeluminancedef
+    """
+    red, green, blue = ImageColor.getrgb(_safe_color(color, "#000000"))
+
+    # Convert 8-bit RGB to 0-1 range
+    r_srgb = red / 255.0
+    g_srgb = green / 255.0
+    b_srgb = blue / 255.0
+
+    # Apply gamma correction to get linear RGB
+    def _linearize(channel: float) -> float:
+        if channel <= 0.03928:
+            return channel / 12.92
+        return ((channel + 0.055) / 1.055) ** 2.4
+
+    r_linear = _linearize(r_srgb)
+    g_linear = _linearize(g_srgb)
+    b_linear = _linearize(b_srgb)
+
+    # Calculate relative luminance
+    return 0.2126 * r_linear + 0.7152 * g_linear + 0.0722 * b_linear
+
+
+def _should_darken_glow(border_color: str, background_color: str, text_color: str) -> bool:
+    """
+    Determine if glow should darken (True) or lighten (False).
+
+    The glow should enhance the border's contrast with the background:
+    - Dark border on light background → black glow (shadow)
+    - Light border on dark background → white glow (halo)
+
+    When border equals background (high contrast case), base decision on text.
+    """
+    border_lum = _relative_luminance(border_color)
+    bg_lum = _relative_luminance(background_color)
+
+    # If border equals background (within small tolerance), use text color instead
+    if abs(border_lum - bg_lum) < 0.001:
+        text_lum = _relative_luminance(text_color)
+        # If text is darker than background, darken the glow (create shadow)
+        # If text is lighter than background, lighten the glow (create halo)
+        return text_lum < bg_lum
+
+    # Otherwise: if border is lighter than background, darken (black glow)
+    # If border is darker than background, lighten (white glow/screen blend)
+    return border_lum > bg_lum
+
+
+def _contrast_ratio(color1: str, color2: str) -> float:
+    """Calculate WCAG 2.0 contrast ratio between two colors."""
+    lum1 = _relative_luminance(color1)
+    lum2 = _relative_luminance(color2)
+    lighter = max(lum1, lum2)
+    darker = min(lum1, lum2)
+    return (lighter + 0.05) / (darker + 0.05)
+
+
+def _adjust_color_for_contrast(
+    base_color: str,
+    reference_color: str,
+    target_ratio: float = 7.0,
+    darken: bool = False,
+) -> str:
+    """
+    Adjust base_color to achieve target contrast ratio with reference_color.
+
+    If the colors already meet or exceed the target ratio, return base_color unchanged.
+    Otherwise, calculate the exact luminance needed and scale the color mathematically.
+
+    Note: If the target ratio requires a luminance outside the sRGB gamut (< 0 or > 1),
+    the function returns the best achievable result within gamut, which may not meet
+    the target ratio. This commonly occurs when trying to achieve high contrast ratios
+    with already-dark or already-bright colors.
+
+    Args:
+        base_color: Color to adjust
+        reference_color: Color to contrast against
+        target_ratio: Target WCAG contrast ratio (default 7.0)
+        darken: True to darken, False to lighten (direction to adjust)
+
+    Returns:
+        Adjusted hex color string
+    """
+    # Check if we already meet the target
+    current_ratio = _contrast_ratio(base_color, reference_color)
+    if current_ratio >= target_ratio:
+        return base_color
+
+    base_lum = _relative_luminance(base_color)
+    ref_lum = _relative_luminance(reference_color)
+
+    # Calculate target luminance for desired contrast ratio
+    if darken:
+        # Making base_color darker, so it becomes the darker color in the ratio
+        # ratio = (ref_lum + 0.05) / (target_lum + 0.05)
+        # target_lum = (ref_lum + 0.05) / ratio - 0.05
+        target_lum = (ref_lum + 0.05) / target_ratio - 0.05
+        target_lum = max(0.0, min(base_lum, target_lum))  # Can't go lighter when darkening
+    else:
+        # Making base_color lighter, so it becomes the lighter color in the ratio
+        # ratio = (target_lum + 0.05) / (ref_lum + 0.05)
+        # target_lum = ratio * (ref_lum + 0.05) - 0.05
+        target_lum = target_ratio * (ref_lum + 0.05) - 0.05
+        target_lum = max(base_lum, min(1.0, target_lum))  # Can't go darker when lightening
+
+    # Convert to linear RGB, scale, convert back
+    r, g, b = ImageColor.getrgb(base_color)
+
+    def _to_linear(channel: int) -> float:
+        srgb = channel / 255.0
+        if srgb <= 0.03928:
+            return srgb / 12.92
+        return ((srgb + 0.055) / 1.055) ** 2.4
+
+    def _from_linear(linear: float) -> int:
+        linear = max(0.0, min(1.0, linear))
+        srgb = linear * 12.92 if linear <= 0.0031308 else 1.055 * (linear ** (1 / 2.4)) - 0.055
+        return int(max(0, min(255, srgb * 255)))
+
+    if base_lum < 0.0001:
+        # Pure black, can't scale, so just move toward target
+        if not darken:
+            # Lightening from black - use a gray that achieves the target
+            scaled_r = scaled_g = scaled_b = _from_linear(min(1.0, target_lum / 0.2126))
+        else:
+            return base_color  # Can't darken pure black
+    else:
+        scale = target_lum / base_lum
+
+        # Check if scaling would push any channel out of gamut
+        r_lin = _to_linear(r)
+        g_lin = _to_linear(g)
+        b_lin = _to_linear(b)
+
+        scaled_r_lin = r_lin * scale
+        scaled_g_lin = g_lin * scale
+        scaled_b_lin = b_lin * scale
+
+        # If any channel exceeds gamut, we can't achieve target via uniform scaling
+        # Return the color clamped to gamut (best effort)
+        if max(scaled_r_lin, scaled_g_lin, scaled_b_lin) > 1.0 or min(scaled_r_lin, scaled_g_lin, scaled_b_lin) < 0.0:
+            # Clamp channels and accept reduced contrast
+            scaled_r = _from_linear(scaled_r_lin)
+            scaled_g = _from_linear(scaled_g_lin)
+            scaled_b = _from_linear(scaled_b_lin)
+        else:
+            scaled_r = _from_linear(scaled_r_lin)
+            scaled_g = _from_linear(scaled_g_lin)
+            scaled_b = _from_linear(scaled_b_lin)
+
+    return f"#{scaled_r:02x}{scaled_g:02x}{scaled_b:02x}"
+
+
+def _create_glow_layer(  # noqa: PLR0913
+    content: str,
+    font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
+    text_x: float,
+    text_y: float,
+    bbox: tuple[float, float, float, float],
+    image_width: int,
+    image_height: int,
+    darken: bool,
+    blur_radius: int = 10,
+    opacity: float = 1.0,
+) -> Image.Image:
+    """
+    Create a blurred glow layer that darkens or lightens areas beneath text/icons.
+
+    Args:
+        content: Text or icon glyph to render
+        font: Font to use
+        text_x, text_y: Position of text
+        bbox: Bounding box of text (not used in non-rotated case but kept for API consistency)
+        image_width, image_height: Dimensions of final image
+        darken: True to darken (use black), False to lighten (use white)
+        blur_radius: Gaussian blur radius in pixels
+        opacity: Opacity of the glow effect (0.0-1.0)
+
+    Returns:
+        RGBA image with blurred glow
+    """
+    # Use semi-transparent black (darken) or white (lighten)
+    alpha = int(opacity * 255)
+    glow_color = (0, 0, 0, alpha) if darken else (255, 255, 255, alpha)
+
+    # Create glow on full canvas
+    glow_layer = Image.new("RGBA", (image_width, image_height), (0, 0, 0, 0))
+    glow_draw = ImageDraw.Draw(glow_layer)
+    glow_draw.text(
+        (text_x, text_y),
+        content,
+        fill=glow_color,
+        font=font,
+    )
+
+    # Apply Gaussian blur to create glow effect
+    return glow_layer.filter(ImageFilter.GaussianBlur(radius=blur_radius))
+
+
+def _composite_glow_layer(base_image: Image.Image, glow_layer: Image.Image, darken: bool) -> Image.Image:
+    """
+    Composite a glow layer onto base image using appropriate blend mode.
+
+    For lightening (darken=False): uses screen blend mode to only lighten
+    For darkening (darken=True): uses multiply blend mode to only darken
+
+    Args:
+        base_image: Base RGB image
+        glow_layer: RGBA glow layer with alpha channel
+        darken: True for darken/multiply, False for lighten/screen
+
+    Returns:
+        Composited RGB image
+    """
+    base_rgba = base_image.convert("RGBA")
+
+    # Split glow layer into RGB and alpha
+    glow_rgb = glow_layer.convert("RGB")
+    glow_alpha = glow_layer.split()[3]  # Alpha channel
+
+    # Convert to numpy-like operations using pixel access
+    base_pixels = base_rgba.load()
+    glow_rgb_pixels = glow_rgb.load()
+    glow_alpha_pixels = glow_alpha.load()
+
+    result = base_rgba.copy()
+    result_pixels = result.load()
+
+    width, height = base_rgba.size
+
+    for y in range(height):
+        for x in range(width):
+            alpha = glow_alpha_pixels[x, y] / 255.0
+            if alpha > 0:
+                base_r, base_g, base_b, base_a = base_pixels[x, y]
+                glow_r, glow_g, glow_b = glow_rgb_pixels[x, y]
+
+                if darken:
+                    # Multiply blend: result = base * (glow / 255)
+                    new_r = int(base_r * (glow_r / 255.0))
+                    new_g = int(base_g * (glow_g / 255.0))
+                    new_b = int(base_b * (glow_b / 255.0))
+                else:
+                    # Screen blend: result = 1 - (1 - base) * (1 - glow)
+                    new_r = int(255 - (255 - base_r) * (255 - glow_r) / 255.0)
+                    new_g = int(255 - (255 - base_g) * (255 - glow_g) / 255.0)
+                    new_b = int(255 - (255 - base_b) * (255 - glow_b) / 255.0)
+
+                # Apply alpha blending between original and blended
+                final_r = int(base_r + (new_r - base_r) * alpha)
+                final_g = int(base_g + (new_g - base_g) * alpha)
+                final_b = int(base_b + (new_b - base_b) * alpha)
+
+                result_pixels[x, y] = (final_r, final_g, final_b, base_a)
+
+    return result.convert("RGB")
+
+
+def _calculate_optimal_border_color(text_color: str, background_color: str) -> str:  # noqa: C901
+    """
+    Calculate optimal border color to maximize contrast with both text and background.
+
+    Tries two approaches:
+    1. Scale background to achieve 7:1 with text
+    2. Scale text to achieve 7:1 with background
+
+    Returns whichever option provides better minimum contrast with both colors.
+    If text and background already have ≥7:1 contrast, returns background unchanged.
+    """
+    target_ratio = 7.0
+
+    # Get luminances
+    text_lum = _relative_luminance(text_color)
+    bg_lum = _relative_luminance(background_color)
+
+    # Calculate current contrast ratio between text and background
+    lighter = max(text_lum, bg_lum)
+    darker = min(text_lum, bg_lum)
+    current_ratio = (lighter + 0.05) / (darker + 0.05)
+
+    # If contrast is already sufficient, use background as-is
+    if current_ratio >= target_ratio:
+        return background_color
+
+    def _scale_color_to_luminance(color: str, source_lum: float, target_lum: float) -> str | None:
+        """Scale a color's luminance. Returns None if not possible."""
+        if source_lum < 0.0001:
+            return None
+
+        target_lum = max(0.0, min(1.0, target_lum))
+        scale = target_lum / source_lum
+
+        r, g, b = ImageColor.getrgb(_safe_color(color, "#000000"))
+
+        def _to_linear(channel: int) -> float:
+            srgb = channel / 255.0
+            if srgb <= 0.03928:
+                return srgb / 12.92
+            return ((srgb + 0.055) / 1.055) ** 2.4
+
+        def _from_linear(linear: float) -> int:
+            linear = max(0.0, min(1.0, linear))
+            srgb = linear * 12.92 if linear <= 0.0031308 else 1.055 * (linear ** (1 / 2.4)) - 0.055
+            return int(max(0, min(255, srgb * 255)))
+
+        # Scale in linear space
+        scaled_r = _from_linear(_to_linear(r) * scale)
+        scaled_g = _from_linear(_to_linear(g) * scale)
+        scaled_b = _from_linear(_to_linear(b) * scale)
+
+        return f"#{scaled_r:02x}{scaled_g:02x}{scaled_b:02x}"
+
+    def _contrast_ratio(lum1: float, lum2: float) -> float:
+        """Calculate contrast ratio between two luminances."""
+        lighter = max(lum1, lum2)
+        darker = min(lum1, lum2)
+        return (lighter + 0.05) / (darker + 0.05)
+
+    # Option 1: Scale background to achieve 7:1 with text
+    if text_lum > bg_lum:
+        target_lum_1 = (text_lum + 0.05) / target_ratio - 0.05
+    else:
+        target_lum_1 = target_ratio * (text_lum + 0.05) - 0.05
+
+    option1 = _scale_color_to_luminance(background_color, bg_lum, target_lum_1)
+
+    # Option 2: Scale text to achieve 7:1 with background
+    target_lum_2 = (bg_lum + 0.05) / target_ratio - 0.05 if bg_lum > text_lum else target_ratio * (bg_lum + 0.05) - 0.05
+
+    option2 = _scale_color_to_luminance(text_color, text_lum, target_lum_2)
+
+    # Evaluate both options and pick the one with better minimum contrast
+    candidates = []
+
+    if option1:
+        option1_lum = _relative_luminance(option1)
+        min_contrast_1 = min(
+            _contrast_ratio(option1_lum, text_lum),
+            _contrast_ratio(option1_lum, bg_lum),
+        )
+        candidates.append((option1, min_contrast_1))
+
+    if option2:
+        option2_lum = _relative_luminance(option2)
+        min_contrast_2 = min(
+            _contrast_ratio(option2_lum, text_lum),
+            _contrast_ratio(option2_lum, bg_lum),
+        )
+        candidates.append((option2, min_contrast_2))
+
+    # Return the option with the best minimum contrast
+    if candidates:
+        return max(candidates, key=lambda x: x[1])[0]
+
+    # Fallback: use background color
+    return background_color
 
 
 def _parse_palette(raw_config: dict[str, Any]) -> dict[str, str]:
@@ -210,6 +593,17 @@ def _parse_flags(raw_config: dict[str, Any], palette: dict[str, str]) -> dict[st
     return flags
 
 
+def _parse_style_assets(raw_config: dict[str, Any]) -> StyleAssets:
+    palette = _parse_palette(raw_config)
+    icons = _parse_icons(raw_config)
+    flag_definitions = _parse_flags(raw_config, palette)
+    return StyleAssets(
+        palette=palette,
+        icons=icons,
+        flag_definitions=flag_definitions,
+    )
+
+
 def _parse_flag_keys(value: Any) -> set[str]:
     if not isinstance(value, list):
         return set()
@@ -290,9 +684,10 @@ def _style_from_config(raw_config: dict[str, Any]) -> ProductImageStyle:
     defaults = raw_config.get("defaults", {})
     if not isinstance(defaults, dict):
         defaults = {}
-    palette = _parse_palette(raw_config)
-    icons = _parse_icons(raw_config)
-    flag_definitions = _parse_flags(raw_config, palette)
+    style_assets = _parse_style_assets(raw_config)
+    palette = style_assets.palette
+    icons = style_assets.icons
+    flag_definitions = style_assets.flag_definitions
     (
         resolved_icon,
         resolved_icon_font_path,
@@ -320,7 +715,9 @@ def _style_from_config(raw_config: dict[str, Any]) -> ProductImageStyle:
         if configured_icon_highlight_color_token is not None
         else resolved_icon_highlight_color_token
     )
-    resolved_icon_highlight_color = _resolve_color(highlight_token, "#FFFFFF", palette) if highlight_token else None
+    resolved_icon_highlight_color = (
+        _resolve_color(highlight_token, DEFAULT_HIGHLIGHT_COLOR, palette) if highlight_token else None
+    )
 
     configured_flag_keys = _parse_flag_keys(defaults.get("flags"))
     ordered_flags = _ordered_flag_specs(configured_flag_keys, flag_definitions)
@@ -375,16 +772,23 @@ def _build_targets_from_loyverse_items(items: list[dict[str, Any]]) -> list[Prod
     return sorted(targets, key=lambda target: target.name.lower())
 
 
-def _style_for_product_id(raw_config: dict[str, Any], base_style: ProductImageStyle, item_id: str) -> ProductImageStyle:
+def _style_for_product_id(
+    raw_config: dict[str, Any],
+    base_style: ProductImageStyle,
+    item_id: str,
+    *,
+    style_assets: StyleAssets | None = None,
+) -> ProductImageStyle:
     overrides = raw_config.get("product_id_overrides", {})
     if not isinstance(overrides, dict):
         return base_style
     override = overrides.get(item_id, {})
     if not isinstance(override, dict):
         return base_style
-    palette = _parse_palette(raw_config)
-    icons = _parse_icons(raw_config)
-    flag_definitions = _parse_flags(raw_config, palette)
+    resolved_style_assets = style_assets if style_assets is not None else _parse_style_assets(raw_config)
+    palette = resolved_style_assets.palette
+    icons = resolved_style_assets.icons
+    flag_definitions = resolved_style_assets.flag_definitions
     (
         resolved_icon,
         resolved_icon_font_path,
@@ -417,7 +821,7 @@ def _style_for_product_id(raw_config: dict[str, Any], base_style: ProductImageSt
     )
     resolved_icon_highlight_color: str | None
     if highlight_token:
-        fallback_highlight = base_style.icon_highlight_color or "#FFFFFF"
+        fallback_highlight = base_style.icon_highlight_color or DEFAULT_HIGHLIGHT_COLOR
         resolved_icon_highlight_color = _resolve_color(highlight_token, fallback_highlight, palette)
     else:
         resolved_icon_highlight_color = base_style.icon_highlight_color
@@ -458,6 +862,13 @@ def _initials_from_name(name: str) -> str:
     tokens = [token.replace("'", "") for token in raw_tokens if token.replace("'", "")]
     if not tokens:
         return "?"
+
+    number_token = next((token for token in tokens if any(char.isdigit() for char in token)), None)
+    if number_token is not None:
+        if number_token == tokens[0]:
+            return number_token
+        return f"{tokens[0][0]}{number_token}"
+
     if len(tokens) == 1:
         return tokens[0][:2]
     return "".join(token[0] for token in tokens[:3])
@@ -539,6 +950,41 @@ def _get_icon_font(icon_font_path: str | None, size: int) -> ImageFont.FreeTypeF
         raise ValueError(msg) from None
 
 
+def _safe_horizontal_bounds(
+    width: int,
+    *,
+    left_pct: float = SAFE_MARGIN_SIDE_PCT,
+    right_pct: float | None = None,
+) -> tuple[int, int]:
+    resolved_right_pct = left_pct if right_pct is None else right_pct
+    left = int(width * left_pct)
+    right = width - int(width * resolved_right_pct)
+    return left, right
+
+
+def _safe_vertical_bounds(
+    height: int,
+    *,
+    top_pct: float = SAFE_MARGIN_TOP_PCT,
+    bottom_clear_pct: float = SAFE_MARGIN_BOTTOM_CLEAR_PCT,
+) -> tuple[int, int]:
+    top = int(height * top_pct)
+    bottom = int(height * (1.0 - bottom_clear_pct))
+    return top, bottom
+
+
+def _flag_reference_text_height(
+    font: ImageFont.FreeTypeFont | ImageFont.ImageFont,
+    draw: ImageDraw.ImageDraw,
+) -> int:
+    # Use a shared reference so '+' and 'AF' flags are consistently sized across products.
+    af_bbox = draw.textbbox((0, 0), "AF", font=font)
+    plus_bbox = draw.textbbox((0, 0), "+", font=font)
+    af_height = af_bbox[3] - af_bbox[1]
+    plus_height = plus_bbox[3] - plus_bbox[1]
+    return max(1, af_height, plus_height)
+
+
 def _draw_top_right_flags(
     image: Image.Image,
     draw: ImageDraw.ImageDraw,
@@ -552,7 +998,7 @@ def _draw_top_right_flags(
     flag_font = _get_font(font_size)
 
     pad_x = max(10, int(min(style.width, style.height) * 0.018))
-    left_pad_x = max(pad_x + 1, round(pad_x * 1.5))
+    left_pad_x = max(pad_x + 1, round(pad_x * FLAG_LEFT_PAD_MULTIPLIER))
     pad_y = max(6, int(min(style.width, style.height) * 0.012))
     bottom_pad_y = pad_y * 2
     radius = max(8, int(min(style.width, style.height) * 0.035))
@@ -560,18 +1006,16 @@ def _draw_top_right_flags(
     overdraw = border_width
     reveal_margin = max(6, int(min(style.width, style.height) * 0.012))
     if len(flags) > 1:
-        reveal_margin *= 2
+        reveal_margin *= FLAG_MULTI_REVEAL_MULTIPLIER
 
     flag_layer = Image.new("RGBA", (style.width, style.height), (0, 0, 0, 0))
     flag_draw = ImageDraw.Draw(flag_layer)
 
     # Keep label text inside safe margins even if flags extend to canvas edges.
-    safe_left = int(style.width * SAFE_MARGIN_SIDE_PCT)
-    flag_safe_right_pct = 0.02
-    flag_safe_top_pct = max(0.0, SAFE_MARGIN_TOP_PCT - 0.02)
-    safe_right = style.width - int(style.width * flag_safe_right_pct)
-    safe_top = int(style.height * flag_safe_top_pct)
-    safe_bottom = int(style.height * (1.0 - SAFE_MARGIN_BOTTOM_CLEAR_PCT))
+    flag_safe_right_pct = max(0.0, SAFE_MARGIN_SIDE_PCT - FLAG_RIGHT_MARGIN_REDUCTION_PCT)
+    safe_left, safe_right = _safe_horizontal_bounds(style.width, right_pct=flag_safe_right_pct)
+    flag_safe_top_pct = max(0.0, SAFE_MARGIN_TOP_PCT - FLAG_TOP_MARGIN_REDUCTION_PCT)
+    safe_top, safe_bottom = _safe_vertical_bounds(style.height, top_pct=flag_safe_top_pct)
     top = -overdraw
     # Keep all flag text aligned to the same baseline row within safe area.
     current_right = style.width - 1 + overdraw
@@ -584,7 +1028,8 @@ def _draw_top_right_flags(
         text_height = text_bbox[3] - text_bbox[1]
         text_metrics.append((text, fill_color, text_bbox, text_width, text_height))
 
-    row_text_height = max(text_height for _, _, _, _, text_height in text_metrics)
+    max_glyph_height = max(text_height for _, _, _, _, text_height in text_metrics)
+    row_text_height = max(_flag_reference_text_height(flag_font, draw), max_glyph_height)
     row_text_bottom = min(safe_bottom, safe_top + row_text_height)
 
     for text, fill_color, text_bbox, text_width, _text_height in text_metrics:
@@ -681,32 +1126,71 @@ def _draw_single_flag_spec(
 
 def _draw_tilted_icon(
     image: Image.Image,
-    text_color: str,
     params: TiltedIconRenderParams,
 ) -> Image.Image:
-    # Render glyph to a transparent layer, rotate 45 degrees clockwise, then composite.
-    pad = params.text_stroke_width + 2
-    glyph_w = int(params.text_width + (pad * 2))
-    glyph_h = int(params.text_height + (pad * 2))
-    glyph_layer = Image.new("RGBA", (glyph_w, glyph_h), (0, 0, 0, 0))
-    glyph_draw = ImageDraw.Draw(glyph_layer)
-    glyph_draw.text(
-        (pad - params.bbox[0], pad - params.bbox[1]),
-        params.content,
-        fill=text_color,
-        font=params.font,
-        stroke_width=params.text_stroke_width,
-        stroke_fill=params.text_stroke_color,
+    # Double border approach:
+    # - Outer border: based on text color, adjusted for 7:1 contrast with background
+    # - Inner border: based on background color, adjusted for 7:1 contrast with text
+    outer_stroke_color = _adjust_color_for_contrast(
+        params.text_color,
+        params.background_color,
+        target_ratio=7.0,
+        darken=not params.text_is_lighter,
+    )
+    inner_stroke_color = _adjust_color_for_contrast(
+        params.background_color,
+        params.text_color,
+        target_ratio=7.0,
+        darken=params.text_is_lighter,
     )
 
-    rotated_glyph = glyph_layer.rotate(-45, expand=True, resample=Image.Resampling.BICUBIC)
+    pad_outer = OUTER_BORDER_WIDTH + 2
+    glyph_w = int(params.text_width + (pad_outer * 2))
+    glyph_h = int(params.text_height + (pad_outer * 2))
+
+    # Outer layer with adjusted text color stroke
+    outer_layer = Image.new("RGBA", (glyph_w, glyph_h), (0, 0, 0, 0))
+    outer_draw = ImageDraw.Draw(outer_layer)
+    outer_draw.text(
+        (pad_outer - params.bbox[0], pad_outer - params.bbox[1]),
+        params.content,
+        fill=params.text_color,
+        font=params.font,
+        stroke_width=OUTER_BORDER_WIDTH,
+        stroke_fill=outer_stroke_color,
+    )
+
+    rotated_outer = outer_layer.rotate(-45, expand=True, resample=Image.Resampling.BICUBIC)
+
     center_x = params.text_x + (params.text_width / 2)
     center_y = params.text_y + (params.text_height / 2)
-    paste_x = round(center_x - (rotated_glyph.width / 2))
-    paste_y = round(center_y - (rotated_glyph.height / 2))
+    paste_x_outer = round(center_x - (rotated_outer.width / 2))
+    paste_y_outer = round(center_y - (rotated_outer.height / 2))
 
     image_rgba = image.convert("RGBA")
-    image_rgba.alpha_composite(rotated_glyph, (paste_x, paste_y))
+    image_rgba.alpha_composite(rotated_outer, (paste_x_outer, paste_y_outer))
+
+    # Inner layer with adjusted background color stroke
+    pad_inner = INNER_BORDER_WIDTH + 2
+    glyph_w_inner = int(params.text_width + (pad_inner * 2))
+    glyph_h_inner = int(params.text_height + (pad_inner * 2))
+
+    inner_layer = Image.new("RGBA", (glyph_w_inner, glyph_h_inner), (0, 0, 0, 0))
+    inner_draw = ImageDraw.Draw(inner_layer)
+    inner_draw.text(
+        (pad_inner - params.bbox[0], pad_inner - params.bbox[1]),
+        params.content,
+        fill=params.text_color,
+        font=params.font,
+        stroke_width=INNER_BORDER_WIDTH,
+        stroke_fill=inner_stroke_color,
+    )
+
+    rotated_inner = inner_layer.rotate(-45, expand=True, resample=Image.Resampling.BICUBIC)
+    paste_x = round(center_x - (rotated_inner.width / 2))
+    paste_y = round(center_y - (rotated_inner.height / 2))
+
+    image_rgba.alpha_composite(rotated_inner, (paste_x, paste_y))
     return image_rgba.convert("RGB")
 
 
@@ -731,12 +1215,11 @@ def _draw_icon_highlight(  # noqa: PLR0913
     border_thickness = 3
 
     # Safe zone is shared with content layout and driven by top/bottom margin constants.
-    safe_zone_top = int(image_height * SAFE_MARGIN_TOP_PCT)
-    safe_zone_bottom = int(image_height * (1.0 - SAFE_MARGIN_BOTTOM_CLEAR_PCT))
+    safe_zone_top, safe_zone_bottom = _safe_vertical_bounds(image_height)
     safe_zone_center = (safe_zone_top + safe_zone_bottom) // 2
 
     # Total stripe height includes both 3px borders and the center fill.
-    total_stripe_height = max((border_thickness * 2) + 1, round(image_height * 0.18))
+    total_stripe_height = max((border_thickness * 2) + 1, round(image_height * HIGHLIGHT_STRIPE_HEIGHT_PCT))
     stripe_y_start = safe_zone_center - (total_stripe_height // 2)
     stripe_y_end = stripe_y_start + total_stripe_height
 
@@ -778,15 +1261,13 @@ def _draw_icon_highlight(  # noqa: PLR0913
     return image_rgba.convert("RGB")
 
 
-def _render_image_bytes(target: ProductImageTarget, style: ProductImageStyle) -> bytes:
+def _render_image_bytes(target: ProductImageTarget, style: ProductImageStyle) -> bytes:  # noqa: PLR0915
     image = Image.new("RGB", (style.width, style.height), style.background_color)
     draw = ImageDraw.Draw(image)
 
     # Shared safe zone margins used for all content layout.
-    safe_left = int(style.width * SAFE_MARGIN_SIDE_PCT)
-    safe_right = style.width - safe_left
-    safe_top = int(style.height * SAFE_MARGIN_TOP_PCT)
-    safe_bottom = int(style.height * (1.0 - SAFE_MARGIN_BOTTOM_CLEAR_PCT))
+    safe_left, safe_right = _safe_horizontal_bounds(style.width)
+    safe_top, safe_bottom = _safe_vertical_bounds(style.height)
 
     icon_glyph = _resolve_icon_glyph(style.icon)
     initials = _initials_from_name(target.name)
@@ -824,8 +1305,10 @@ def _render_image_bytes(target: ProductImageTarget, style: ProductImageStyle) ->
     text_x = min(max(text_x, min_x), max_x)
     text_y = min(max(text_y, min_y), max_y)
 
-    text_stroke_color = _darken_color(style.text_color, amount=0.6)
-    text_stroke_width = max(1, min(4, int(getattr(initials_font, "size", style.title_font_size) * 0.03)))
+    # Determine adjustment direction based on which is lighter
+    text_lum = _relative_luminance(style.text_color)
+    bg_lum = _relative_luminance(style.background_color)
+    text_is_lighter = text_lum > bg_lum
 
     # Apply highlight stripe before drawing text/icon so it renders behind content
     if style.icon_highlight_color:
@@ -839,12 +1322,13 @@ def _render_image_bytes(target: ProductImageTarget, style: ProductImageStyle) ->
             text_height,
             bbox,
             style.icon_highlight_color,
-            text_stroke_width,
-            text_stroke_color,
+            INNER_BORDER_WIDTH,
+            style.background_color,
         )
         draw = ImageDraw.Draw(image)  # Refresh draw object after modifying image
 
     if icon_glyph and style.icon_tilted:
+        # For tilted icons, glow is handled inside _draw_tilted_icon
         tilted_params = TiltedIconRenderParams(
             content=content,
             font=initials_font,
@@ -853,28 +1337,58 @@ def _render_image_bytes(target: ProductImageTarget, style: ProductImageStyle) ->
             text_height=text_height,
             text_x=text_x,
             text_y=text_y,
-            text_stroke_width=text_stroke_width,
-            text_stroke_color=text_stroke_color,
+            text_color=style.text_color,
+            background_color=style.background_color,
+            text_is_lighter=text_is_lighter,
+            image_width=style.width,
+            image_height=style.height,
         )
         image = _draw_tilted_icon(
             image,
-            style.text_color,
             tilted_params,
         )
+        draw = ImageDraw.Draw(image)  # Refresh draw object after tilted icon
     else:
+        # Double border approach:
+        # - Outer border: based on text color, adjusted for 7:1 contrast with background
+        # - Inner border: based on background color, adjusted for 7:1 contrast with text
+        outer_stroke_color = _adjust_color_for_contrast(
+            style.text_color,
+            style.background_color,
+            target_ratio=7.0,
+            darken=not text_is_lighter,
+        )
+        inner_stroke_color = _adjust_color_for_contrast(
+            style.background_color,
+            style.text_color,
+            target_ratio=7.0,
+            darken=text_is_lighter,
+        )
+
+        # Draw outer border first (adjusted text color)
         draw.text(
             (text_x, text_y),
             content,
             fill=style.text_color,
             font=initials_font,
-            stroke_width=text_stroke_width,
-            stroke_fill=text_stroke_color,
+            stroke_width=OUTER_BORDER_WIDTH,
+            stroke_fill=outer_stroke_color,
+        )
+
+        # Draw inner border on top (adjusted background color)
+        draw.text(
+            (text_x, text_y),
+            content,
+            fill=style.text_color,
+            font=initials_font,
+            stroke_width=INNER_BORDER_WIDTH,
+            stroke_fill=inner_stroke_color,
         )
 
     # Flags render last so they sit in front of text/icons.
     flags_to_render: list[tuple[str, str]] = []
     if target.has_variants:
-        flags_to_render.append(("+", "#2e7d32"))
+        flags_to_render.append((FLAG_VARIANT_TEXT, FLAG_VARIANT_COLOR))
     flags_to_render.extend(style.flags)
     _draw_top_right_flags(image, draw, style, flags_to_render)
 
@@ -943,6 +1457,7 @@ def run_product_image_sync(
     new_product_ids_added = _seed_new_product_ids(products_file, targets)
 
     raw_config = _load_products_config(products_file)
+    style_assets = _parse_style_assets(raw_config)
     base_style = _style_from_config(raw_config)
 
     output_dir = _resolve_output_dir(raw_config)
@@ -964,7 +1479,12 @@ def run_product_image_sync(
     image_paths_by_item_id: dict[str, Path] = {}
     image_hashes_by_item_id: dict[str, str] = {}
     for target in targets:
-        style = _style_for_product_id(raw_config, base_style, target.item_id)
+        style = _style_for_product_id(
+            raw_config,
+            base_style,
+            target.item_id,
+            style_assets=style_assets,
+        )
         image_bytes = _render_image_bytes(target, style)
         image_path = output_dir / f"{target.item_id}.png"
         image_path.write_bytes(image_bytes)
