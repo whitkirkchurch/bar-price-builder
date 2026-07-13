@@ -1,5 +1,5 @@
 aws_region                  = "eu-west-1"
-project_name                = "bar-price-builder"
-terraform_state_bucket_name = "whitkirk-bar-price-builder-tfstate"
+project_name                = "bartender"
+terraform_state_bucket_name = "whitkirk-bartender-tfstate"
 github_org                  = "whitkirkchurch"
 github_repo                 = "bar-price-builder"

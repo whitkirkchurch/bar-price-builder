@@ -92,7 +92,7 @@ If your organisation requires least privilege, the applying principal needs at l
         "dynamodb:UpdateTable",
         "dynamodb:TagResource"
       ],
-      "Resource": "arn:aws:dynamodb:*:*:table/bar-price-builder-terraform-locks"
+      "Resource": "arn:aws:dynamodb:*:*:table/bartender-terraform-locks"
     },
     {
       "Sid": "BootstrapIAM",
@@ -131,10 +131,10 @@ Terraform may require additional `s3:Get*` / `iam:Get*` actions during planning;
 
 ### What the bootstrap deploy role receives
 
-Bootstrap also creates `bar-price-builder-github-actions-deploy` with a **separate** policy (in `main.tf`) scoped to:
+Bootstrap also creates `bartender-github-actions-deploy` with a **separate** policy (in `main.tf`) scoped to:
 
 - Read/write Terraform state in the state bucket and lock table
-- Manage application resources prefixed with `bar-price-builder-` (S3, Lambda, IAM, CloudWatch Logs)
+- Manage application resources prefixed with `bartender-` (S3, Lambda, IAM, CloudWatch Logs)
 - Full SES access (for inbound rules and sending replies)
 
 GitHub Actions uses this role via OIDC — it does **not** need the bootstrap permissions above.
@@ -154,7 +154,7 @@ Edit `terraform.tfvars`:
 | `terraform_state_bucket_name` | Globally unique S3 bucket name for remote state                       |
 | `github_org` / `github_repo`  | Must match the GitHub repository (`whitkirkchurch/bar-price-builder`) |
 | `aws_region`                  | `eu-west-1`                                                           |
-| `project_name`                | Resource name prefix (default `bar-price-builder`)                    |
+| `project_name`                | Resource name prefix (default `bartender`)                            |
 
 `terraform.tfvars` is gitignored.
 
