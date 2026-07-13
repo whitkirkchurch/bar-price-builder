@@ -33,18 +33,19 @@ In the repository: **Settings → Secrets and variables → Actions**.
 
 **Variables:**
 
-| Name                                        | Value (from bootstrap output)                             |
-| ------------------------------------------- | --------------------------------------------------------- |
-| `AWS_REGION`                                | `eu-west-1`                                               |
-| `AWS_ROLE_ARN`                              | `github_actions_role_arn` output                          |
-| `TF_STATE_BUCKET`                           | `terraform_state_bucket` output                           |
-| `TF_LOCK_TABLE`                             | `terraform_lock_table` output                             |
-| `TF_VAR_DOMAIN_NAME`                        | e.g. `whitkirk.com`                                       |
-| `TF_VAR_INBOUND_EMAIL_ADDRESS`              | e.g. `supplier-updates@whitkirk.com`                      |
-| `TF_VAR_NOTIFICATION_FROM_ADDRESS`          | e.g. `supplier-updates@whitkirk.com`                      |
-| `TF_VAR_PROJECT_NAME`                       | Must match bootstrap `project_name` (default `bartender`) |
-| `TF_VAR_AIRTABLE_BASE_ID`                   | Airtable Products base ID (e.g. `appXXXXXXXXXXXXXX`)      |
-| `TF_VAR_AIRTABLE_SUPPLIER_MAPPING_TABLE_ID` | Supplier mapping table ID (e.g. `tblXXXXXXXXXXXXXX`)      |
+| Name                                        | Value (from bootstrap output)                              |
+| ------------------------------------------- | ---------------------------------------------------------- |
+| `AWS_REGION`                                | `eu-west-1`                                                |
+| `AWS_ROLE_ARN`                              | `github_actions_role_arn` output                           |
+| `TF_STATE_BUCKET`                           | `terraform_state_bucket` output                            |
+| `TF_LOCK_TABLE`                             | `terraform_lock_table` output                              |
+| `TF_VAR_DOMAIN_NAME`                        | e.g. `whitkirk.com`                                        |
+| `TF_VAR_INBOUND_EMAIL_ADDRESS`              | e.g. `supplier-updates@whitkirk.com`                       |
+| `TF_VAR_NOTIFICATION_FROM_ADDRESS`          | e.g. `supplier-updates@whitkirk.com`                       |
+| `TF_VAR_SES_FEEDBACK_EMAIL`                 | e.g. `web@whitkirkchurch.org.uk` (bounce/complaint alerts) |
+| `TF_VAR_PROJECT_NAME`                       | Must match bootstrap `project_name` (default `bartender`)  |
+| `TF_VAR_AIRTABLE_BASE_ID`                   | Airtable Products base ID (e.g. `appXXXXXXXXXXXXXX`)       |
+| `TF_VAR_AIRTABLE_SUPPLIER_MAPPING_TABLE_ID` | Supplier mapping table ID (e.g. `tblXXXXXXXXXXXXXX`)       |
 
 **Secrets:**
 
@@ -87,6 +88,12 @@ terraform -chdir=terraform apply
 3. Request SES production access to reply to arbitrary forwarders.
 
 Once the domain is verified, SES allows sending from any address on that domain (including `TF_VAR_NOTIFICATION_FROM_ADDRESS`). No separate per-address verification is required.
+
+## SES bounce and complaint alerts
+
+Terraform creates an SNS topic (`bartender-ses-feedback`) and emails bounce/complaint events for the SES domain identity to `TF_VAR_SES_FEEDBACK_EMAIL`.
+
+After the first apply, confirm the SNS subscription from the inbox of that address (AWS sends a one-time confirmation email). Until confirmed, bounce/complaint alerts will not be delivered.
 
 ## Updating bootstrap
 

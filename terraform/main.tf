@@ -63,6 +63,66 @@ resource "aws_ses_domain_identity" "main" {
   domain = var.domain_name
 }
 
+resource "aws_sns_topic" "ses_feedback" {
+  name = "${local.name_prefix}-ses-feedback"
+}
+
+data "aws_iam_policy_document" "ses_feedback_sns" {
+  statement {
+    sid    = "AllowSESPublish"
+    effect = "Allow"
+
+    principals {
+      type        = "Service"
+      identifiers = ["ses.amazonaws.com"]
+    }
+
+    actions   = ["sns:Publish"]
+    resources = [aws_sns_topic.ses_feedback.arn]
+
+    condition {
+      test     = "StringEquals"
+      variable = "AWS:SourceAccount"
+      values   = [data.aws_caller_identity.current.account_id]
+    }
+
+    condition {
+      test     = "ArnLike"
+      variable = "AWS:SourceArn"
+      values   = [aws_ses_domain_identity.main.arn]
+    }
+  }
+}
+
+resource "aws_sns_topic_policy" "ses_feedback" {
+  arn    = aws_sns_topic.ses_feedback.arn
+  policy = data.aws_iam_policy_document.ses_feedback_sns.json
+}
+
+resource "aws_sns_topic_subscription" "ses_feedback_email" {
+  topic_arn = aws_sns_topic.ses_feedback.arn
+  protocol  = "email"
+  endpoint  = var.ses_feedback_email
+}
+
+resource "aws_ses_identity_notification_topic" "bounce" {
+  topic_arn                = aws_sns_topic.ses_feedback.arn
+  notification_type        = "Bounce"
+  identity                 = aws_ses_domain_identity.main.domain
+  include_original_headers = true
+
+  depends_on = [aws_sns_topic_policy.ses_feedback]
+}
+
+resource "aws_ses_identity_notification_topic" "complaint" {
+  topic_arn                = aws_sns_topic.ses_feedback.arn
+  notification_type        = "Complaint"
+  identity                 = aws_ses_domain_identity.main.domain
+  include_original_headers = true
+
+  depends_on = [aws_sns_topic_policy.ses_feedback]
+}
+
 resource "aws_ses_receipt_rule_set" "main" {
   rule_set_name = "${local.name_prefix}-inbound"
 }
