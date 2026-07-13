@@ -6,7 +6,7 @@ description = ""
 readme = "README.md"
 
 [tool.poetry]
-authors = ["Nick Jackson <nick@whitkirkchurch.org.uk>"]
+authors = ["St Mary's Church, Whitkirk Technology Team <tech@whitkirkchurch.org.uk>"]
 package-mode = false
 
 [tool.poetry.dependencies]

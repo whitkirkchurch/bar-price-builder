@@ -1,0 +1,122 @@
+From: John Doe <john.doe@example.com>
+To: supplier-data@bartender.whitkirk.com
+Message-Id: <test-forwarded-sales-order-001@example.com>
+In-Reply-To: <test-sales-order-ack-002@example.com>
+References: <test-sales-order-ack-002@example.com>
+Date: Mon, 13 Jul 2026 08:50:40 -0700 (PDT)
+Subject: Fwd: Sales Order Acknowledgement
+MIME-Version: 1.0
+Content-Type: multipart/mixed;
+	boundary="----=_Part_196932_2035478468.1783957840072"
+
+------=_Part_196932_2035478468.1783957840072
+Content-Type: multipart/alternative;
+	boundary="----=_Part_196933_450184142.1783957840072"
+
+------=_Part_196933_450184142.1783957840072
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: quoted-printable
+
+
+
+---------- Forwarded message ---------
+From: Jane Supplier <jane.supplier@example.com>
+Date: Thursday, July 9, 2026 at 7:14:31=E2=80=AFAM UTC+1
+Subject: Sales Order Acknowledgement
+To: bar@whitkirk.com <bar@whitkirk.com>
+
+
+
+Delivery address
+WHITKIRK ST MARY'S
+SELBY ROAD
+LEEDS
+LEEDS
+LS15 0AA
+------------------------------------------------------------
+-----------------------
+Order:100002 Your ref: Delivery date:10/07/26 A/c:A12345
+
+------------------------------------------------------------
+-----------------------
+Quantity Code Description Size Pack Price EAN code
+1 20001 TEST DRINK STRAWBERRY & LIME 3.4% 1500ML 15 40.00 6000000000001
+1 20002 TEST DRINK PEACH & RASPBERRY 15 X 5500ML 15 30.00 6000000000002
+
+1 20003 TEST JUICE ORANGE & PASSION 275ML NRB275ML 24 20.00 6000000000003
+1 20004 TEST SNACK SALT & VINEGAR 12X40G 12 6.00 6000000000004
+1 20005 TEST SNACK SOUR CREAM & ONION 12X40G 12 6.00 6000000000005
+1 20006 TEST SNACK ORIGINAL 12X40G TUBE 12X40G 12 6.00 6000000000006
+1 20007 TEST SNACK BBQ 12X40GM TUBE 12X40G 12 6.00 6000000000007
+1 20008 TEST SNACK PAPRIKA 12X40G TUBE 12X40G 12 6.00 6000000000008
+
+1 20009 TEST TONIC 200ML [24] 200ML 24 15.00 6000000000009
+1 20010 TEST WINE SAUVIGNON BL 18.7CL 12 20.00 6000000000010
+6 20011 TEST WINE SAUVIGNON BL 75CL 1 5.00 6000000000011
+6 20012 TEST WINE PINOT GRIGIO 75CL 1 5.00 6000000000012
+1 20013 TEST MIX 60/40 (+ DEPOSIT) SINGLE 1 15.00
+1 20014 TEST SPIRIT COCONUT 70CL 18% 70CL 1 12.00 6000000000014
+
+0 WEBREF Website Reference 1 1
+009990002
+1 DEPOS9 GAS TANK DEPOSIT 10.00 1 10.00
+
+Total Goods Value: 250.00
+Total VAT Value : 50.00
+-----------
+Total Value : 300.00
+
+
+Kind regards,
+
+Supplier Co
+
+------=_Part_196933_450184142.1783957840072
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+<br /><br /><div><div dir=3D"auto">---------- Forwarded message ---------<b=
+r />From: <span dir=3D"auto">Jane Supplier &lt;jane.supplier@example.com&g=
+t;</span><br />Date: Thursday, July 9, 2026 at 7:14:31=E2=80=AFAM UTC+1<br=
+ />Subject: Sales Order Acknowledgement<br />To: <span dir=3D"auto">bar@wh=
+itkirk.com &lt;bar@whitkirk.com&gt;</span><br /></div><br /><br /><div><fo=
+nt size=3D"3"><span><br />Delivery address<br />WHITKIRK ST MARY'S<br />SEL=
+BY ROAD<br />LEEDS<br />LEEDS<br />LS15 0AA<br />-------------------------=
+---<span></span>------------------------------<span></span>----------------=
+-------<br /></span></font></div><div><font size=3D"3"><span>Order:100002 =
+ Your ref:                      Delivery date:10/07/26  A/c:A12345</span></f=
+ont></div><div><font size=3D"3"><span><br />-------------------------<span=
+></span>------------------------------<span></span>-----------------------<b=
+r />Quantity  Code          Description                       Size   Pack  =
+ Price   EAN code<br /></span></font></div><div><font size=3D"3"><span>1   =
+  20001         TEST DRINK STRAWBERRY &amp; LIME 3.4% 1500ML    15    40.00=
+  6000000000001<br /></span></font></div><div><font size=3D"3"><span>1     =
+20002         TEST DRINK PEACH &amp; RASPBERRY 15 X 5500ML    15    30.00  =
+6000000000002</span></font></div><div><font size=3D"3"><span><br />1     20=
+003         TEST JUICE ORANGE &amp; PASSION 275ML NRB275ML    24    20.00  =
+6000000000003<br /></span></font></div><div><font size=3D"3"><span>1     200=
+04         TEST SNACK SALT &amp; VINEGAR 12X40G   12     6.00  600000000000=
+4<br />1     20005         TEST SNACK SOUR CREAM &amp; ONION 12X40G   12    =
+ 6.00  6000000000005<br />1     20006         TEST SNACK ORIGINAL 12X40G TU=
+BE 12X40G   12     6.00  6000000000006<br />1     20007         TEST SNACK =
+BBQ 12X40GM TUBE 12X40G   12     6.00  6000000000007<br />1     20008      =
+   TEST SNACK PAPRIKA 12X40G TUBE 12X40G   12     6.00  6000000000008</span=
+></font></div><div><font size=3D"3"><span><br />1     20009         TEST TO=
+NIC 200ML [24]         200ML    24    15.00  6000000000009<br /></span></f=
+ont></div><div><font size=3D"3"><span>1     20010         TEST WINE SAUVIGN=
+ON BL 18.7CL   12    20.00  6000000000010<br /></span></font></div><div><fo=
+nt size=3D"3"><span>6     20011         TEST WINE SAUVIGNON BL 75CL      1=
+     5.00  6000000000011<br />6     20012         TEST WINE PINOT GRIGIO 75=
+CL      1     5.00  6000000000012<br />1     20013         TEST MIX 60/40  =
+(+ DEPOSIT)          SINGLE    1    15.00<br />1     20014         TEST SPI=
+RIT COCONUT 70CL 18%             70CL      1    12.00  6000000000014</span=
+></font></div><div><font size=3D"3"><span><br />0     WEBREF        Website =
+Reference                   1         1<br /></span></font></div><div><font=
+ size=3D"3"><span>009990002<br />1     DEPOS9       GAS TANK DEPOSIT 10.00 =
+                       1    10.00<br /><br />Total Goods Value:    250.00<b=
+r />Total VAT Value  :     50.00<br />-----------<br />Total Value      : =
+   300.00<br /></span></font></div><br /><br />Kind regards,<br /><br />Sup=
+plier Co</div>
+------=_Part_196933_450184142.1783957840072--
+
+------=_Part_196932_2035478468.1783957840072--

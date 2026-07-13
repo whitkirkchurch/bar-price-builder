@@ -9,13 +9,13 @@ def test_apply_successful_variant_update_to_snapshot_keeps_prior_variant_changes
                 "variant_id": "v-original",
                 "sku": "10005",
                 "cost": 0.75,
-                "barcode": "5053990107339",
+                "barcode": "6000000000001",
             },
             {
                 "variant_id": "v-paprika",
                 "sku": "10006",
                 "cost": 0.70,
-                "barcode": "5053990107308",
+                "barcode": "6000000000002",
             },
         ],
     }
@@ -41,7 +41,7 @@ def test_apply_successful_variant_update_to_snapshot_keeps_existing_barcode_when
                 "variant_id": "v-original",
                 "sku": "10005",
                 "cost": 0.75,
-                "barcode": "5053990107339",
+                "barcode": "6000000000001",
             },
         ],
     }
@@ -50,7 +50,7 @@ def test_apply_successful_variant_update_to_snapshot_keeps_existing_barcode_when
 
     variant = item_snapshot["variants"][0]
     assert variant["cost"] == 0.81
-    assert variant["barcode"] == "5053990107339"
+    assert variant["barcode"] == "6000000000001"
 
 
 def test_apply_successful_variant_update_to_snapshot_noops_for_unknown_variant() -> None:
@@ -61,7 +61,7 @@ def test_apply_successful_variant_update_to_snapshot_noops_for_unknown_variant()
                 "variant_id": "v-original",
                 "sku": "10005",
                 "cost": 0.75,
-                "barcode": "5053990107339",
+                "barcode": "6000000000001",
             },
         ],
     }
@@ -70,4 +70,4 @@ def test_apply_successful_variant_update_to_snapshot_noops_for_unknown_variant()
 
     variant = item_snapshot["variants"][0]
     assert variant["cost"] == 0.75
-    assert variant["barcode"] == "5053990107339"
+    assert variant["barcode"] == "6000000000001"

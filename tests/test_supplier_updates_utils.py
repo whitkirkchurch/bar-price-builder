@@ -7,7 +7,7 @@ class TestEanNormalization:
     """Tests for EAN handling functions."""
 
     def test_normalize_ean_strips_whitespace(self) -> None:
-        assert _normalize_ean("  5053990107339  ") == "5053990107339"
+        assert _normalize_ean("  6000000000001  ") == "6000000000001"
 
     def test_normalize_ean_handles_empty_string(self) -> None:
         assert _normalize_ean("") is None
@@ -19,19 +19,19 @@ class TestEanNormalization:
         assert _normalize_ean(None) is None
 
     def test_has_ean_changed_detects_change(self) -> None:
-        assert has_ean_changed("5053990107339", "5053990107340") is True
+        assert has_ean_changed("6000000000001", "6000000000002") is True
 
     def test_has_ean_changed_detects_no_change(self) -> None:
-        assert has_ean_changed("5053990107339", "5053990107339") is False
+        assert has_ean_changed("6000000000001", "6000000000001") is False
 
     def test_has_ean_changed_normalizes_whitespace(self) -> None:
-        assert has_ean_changed("  5053990107339  ", "5053990107339") is False
+        assert has_ean_changed("  6000000000001  ", "6000000000001") is False
 
     def test_has_ean_changed_handles_empty_vs_none(self) -> None:
         assert has_ean_changed("", None) is False
 
     def test_has_ean_changed_detects_empty_to_value(self) -> None:
-        assert has_ean_changed("", "5053990107339") is True
+        assert has_ean_changed("", "6000000000001") is True
 
 
 class TestCostChanged:
