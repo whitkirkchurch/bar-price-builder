@@ -113,6 +113,38 @@ EAN updates are also written when changed, but only for mappings where `servings
 
 You must have `LOYVERSE_PAT` set in your environment for API access.
 
+#### Processing forwarded supplier emails (AWS Lambda)
+
+You can also forward supplier confirmation emails to a dedicated inbound address. SES stores the raw message in S3 and invokes a Lambda that:
+
+1. Extracts the confirmation table from the email body or `.txt` attachment
+2. Applies Loyverse cost/EAN updates (`--apply` behaviour)
+3. Replies to the sender with a plain-text report, including any unmapped supplier codes
+
+For local debugging without deploying, use:
+
+```
+poetry run python app.py parse-supplier-email path/to/message.eml
+poetry run python app.py parse-supplier-email path/to/message.eml --extract-only
+```
+
+##### Deploying the Lambda with GitHub Actions
+
+Deployment uses **GitHub OIDC** (no AWS access keys in GitHub). Setup is two stages:
+
+1. **Bootstrap** (once, locally): creates Terraform state storage and the GitHub Actions IAM role — see [`terraform/bootstrap/README.md`](terraform/bootstrap/README.md)
+2. **Application** (ongoing): GitHub Actions builds the Lambda and runs Terraform on push to `main`
+
+```bash
+# One-time bootstrap (admin AWS credentials required)
+cp terraform/bootstrap/terraform.tfvars.example terraform/bootstrap/terraform.tfvars
+# edit terraform/bootstrap/terraform.tfvars
+terraform -chdir=terraform/bootstrap init
+terraform -chdir=terraform/bootstrap apply
+```
+
+Then add the bootstrap outputs and `TF_VAR_*` values as GitHub repository variables/secrets (documented in [`terraform/README.md`](terraform/README.md)).
+
 ### Building product images for Loyverse
 
 Generate local PNG images for all on-sale products from Loyverse.

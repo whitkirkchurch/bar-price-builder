@@ -1,9 +1,11 @@
+from __future__ import annotations
+
 from typing import TYPE_CHECKING
 
 import price_check
-from loyverse import TillProduct
 
 if TYPE_CHECKING:
+    from loyverse import TillProduct
     from price_list import PluPrice
 
 

@@ -48,3 +48,18 @@ repos:
     hooks:
       - id: djlint-reformat-jinja
       - id: djlint-jinja
+
+  - repo: https://github.com/antonbabenko/pre-commit-terraform
+    rev: v1.108.0
+    hooks:
+      - id: terraform_fmt
+      - id: terraform_providers_lock
+        args:
+          - --hook-config=--mode=check-lockfile-is-cross-platform
+          - --args=-platform=linux_amd64
+          - --args=-platform=darwin_arm64
+      - id: terraform_validate
+        args:
+          - --hook-config=--retry-once-with-cleanup=true
+          - --tf-init-args=-lockfile=readonly
+      - id: terraform_tflint

@@ -1,0 +1,5 @@
+aws_region                = "eu-west-1"
+domain_name               = "example.org.uk"
+inbound_email_address     = "supplier-updates@example.org.uk"
+notification_from_address = "supplier-updates@example.org.uk"
+loyverse_pat              = "replace-me"
