@@ -1,0 +1,5 @@
+bucket         = "whitkirk-bartender-tfstate"
+key            = "bartender/supplier-email.tfstate"
+region         = "eu-west-1"
+encrypt        = true
+dynamodb_table = "bartender-terraform-locks"

@@ -1,1 +1,12 @@
 __pycache__
+build/
+dist/
+.terraform/
+terraform/.terraform/
+terraform/terraform.tfvars
+terraform/*.auto.tfvars
+terraform/backend.hcl
+terraform/bootstrap/terraform.tfvars
+terraform/bootstrap/.terraform/
+terraform/bootstrap/terraform.tfstate
+terraform/bootstrap/terraform.tfstate.backup

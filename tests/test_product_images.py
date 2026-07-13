@@ -1,9 +1,15 @@
+from __future__ import annotations
+
 import hashlib
 import json
 from io import BytesIO
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import pytest
+
+if TYPE_CHECKING:
+    from pathlib import Path
+
 from PIL import Image
 
 import product_images

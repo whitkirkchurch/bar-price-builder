@@ -13,6 +13,7 @@ from price_check import (
 from price_list import get_all_plus_in_price_list
 from product_images import print_product_image_summary, run_product_image_sync
 from rendering import build_price_list_pdfs
+from supplier_email import extract_supplier_confirmation_text, parse_raw_email
 from supplier_updates import print_supplier_update_summary, run_supplier_cost_updates
 
 
@@ -69,8 +70,8 @@ def update_costs_from_supplier(
     apply: bool,
 ) -> None:
     try:
-        summary = run_supplier_cost_updates(
-            supplier_confirmation_file=supplier_confirmation_file,
+        report = run_supplier_cost_updates(
+            confirmation_text=supplier_confirmation_file.read_text(),
             mapping_file=mapping_file,
             apply=apply,
         )
@@ -81,7 +82,59 @@ def update_costs_from_supplier(
         click.echo(click.style(f"API Error: {exc}", fg="red"), err=True)
         return
 
-    print_supplier_update_summary(summary, apply)
+    print_supplier_update_summary(report, apply)
+
+
+@cli.command("parse-supplier-email")
+@click.argument("email_file", type=click.Path(exists=True, path_type=Path))
+@click.option(
+    "--mapping-file",
+    type=click.Path(exists=True, path_type=Path),
+    default=DATA_DIR / "supplier_data.yaml",
+    show_default=True,
+    help="YAML file mapping each supplier code to a single PLU and servings_per_unit.",
+)
+@click.option(
+    "--apply",
+    is_flag=True,
+    help="Apply updates to Loyverse API. Without this flag, command runs as dry-run.",
+)
+@click.option(
+    "--extract-only",
+    is_flag=True,
+    help="Only extract and print confirmation text; do not run cost updates.",
+)
+def parse_supplier_email(
+    email_file: Path,
+    mapping_file: Path,
+    apply: bool,
+    extract_only: bool,
+) -> None:
+    try:
+        message = parse_raw_email(email_file.read_bytes())
+        confirmation_text = extract_supplier_confirmation_text(message)
+    except ValueError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        return
+
+    if extract_only:
+        click.echo(confirmation_text)
+        return
+
+    try:
+        report = run_supplier_cost_updates(
+            confirmation_text=confirmation_text,
+            mapping_file=mapping_file,
+            apply=apply,
+        )
+    except ValueError as exc:
+        click.echo(click.style(f"Error: {exc}", fg="red"), err=True)
+        return
+    except requests.RequestException as exc:
+        click.echo(click.style(f"API Error: {exc}", fg="red"), err=True)
+        return
+
+    print_supplier_update_summary(report, apply)
 
 
 @cli.command("build-product-images")

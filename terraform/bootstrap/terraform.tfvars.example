@@ -1,0 +1,5 @@
+aws_region                  = "eu-west-1"
+project_name                = "bartender"
+terraform_state_bucket_name = "whitkirk-bartender-tfstate"
+github_org                  = "whitkirkchurch"
+github_repo                 = "bar-price-builder"
