@@ -1,0 +1,61 @@
+From: Jane Doe <jane.doe@example.com>
+To: bar@whitkirk.com
+Subject: Sales Order Acknowledgement
+Message-ID: <test-sales-order-ack-001@example.com>
+Date: Thu, 02 Jul 2026 06:28:30 +0000
+MIME-Version: 1.0
+Content-Type: multipart/alternative; boundary="--_NmP-ada377e5ef1fac6d-Part_1"
+
+----_NmP-ada377e5ef1fac6d-Part_1
+Content-Type: text/plain; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+<HTML><HEAD><TITLE></TITLE></HEAD><BODY><FONT name=3D"courier" =
+size=3D"3"><PRE><BR>Delivery address<BR>WHITKIRK ST MARY'S<BR>SELBY =
+ROAD<BR>LEEDS<BR>LEEDS<BR>LS15 0AA<BR>-------------------------------------=
+----------------------------------------------<BR>Order:100001 Your ref: =
+Delivery date:03/07/26 A/c:A12345<BR>-----------------=
+------------------------------------------------------------------<BR>Quant=
+ity Code Description Size Pack Price =
+EAN code<BR>1 10001 TEST ALE KEG 11G 3.8% 11G 1 99.99 5000000000001<BR>1 10002 TEST CIDER CASE 15 X 5500ML 15 45.00 5000000000002<BR>1 10003 =
+TEST LEMONADE 200ML NRB [24] 200ML 24 12.50 5000000000003<BR>1 =
+10004 TEST COLA DIET 200ML NRB 200ML 24 15.00 =
+5000000000004<BR>1 10005 TEST CIDER KEG 50L 4.5% =
+50L 1 120.00 5000000000005<BR>0 WEBREF Website =
+Reference 1 1<BR>009990001<BR>1 10006 =
+SUPPLIER FUEL SURCHARGE 1 1.00<BR><BR>Total =
+Goods Value: 292.49<BR>Total VAT Value : 58.=
+50<BR>-----------<BR>Total Value : 350.99<BR></PRE></FONT></BODY></=
+HTML>
+----_NmP-ada377e5ef1fac6d-Part_1
+Content-Type: text/html; charset=utf-8
+Content-Transfer-Encoding: quoted-printable
+
+<HTML><HEAD><TITLE></TITLE></HEAD><BODY><FONT=20name=3D"courier"=20size=3D"=
+3"><PRE><BR>Delivery=20address<BR>WHITKIRK=20ST=20MARY'S<BR>SELBY=20ROAD<BR=
+>LEEDS<BR>LEEDS<BR>LS15=200AA<BR>------------------------------------------=
+-----------------------------------------<BR>Order:100001=20=20Your=20ref:=
+=20=20=20=20=20=20=20=20=20=20=20=20=20=20=20=20=20=20=20=20=20Delivery=
+=20date:03/07/26=20=20A/c:A12345<BR>---------------------------------------=
+--------------------------------------------<BR>Quantity=20=20Code=20=20=20=
+=20=20=20=20=20=20Description=20=20=20=20=20=20=20=20=20=20=20=20=20=20=20=
+=20=20=20=20=20=20=20=20=20=20=20Size=20=20=20Pack=20=20=20Price=20=20=20EAN=
+=20code<BR>1=20=20=20=20=2010001=20=20=20=20=20=20=20=20=20TEST=20ALE=20KEG=
+=2011G=203.8%=2011G=20=20=20=20=20=2011G=20=20=20=20=20=201=20=20=2099.99=20=
+205000000000001<BR>1=20=20=20=20=2010002=20=20=20=20=20=20=20=20=20TEST=20CIDER=
+=20CASE=2015=20X=205500ML=20=20=20=2015=20=20=20=2045.00=20=205000000000002<BR>1=20=20=20=20=2010003=
+=20=20=20=20=20=20=20=20=20TEST=20LEMONADE=20200ML=20NRB=20[24]=20=
+=20200ML=20=20=20=2024=20=20=20=2012.50=20=205000000000003<BR>1=20=20=20=20=
+=2010004=20=20=20=20=20=20=20=20=20TEST=20COLA=20DIET=20200ML=20NRB=
+=20=20=20=20=20200ML=20=20=20=2024=20=20=20=2015.00=20=205000000000004<BR>=
+1=20=20=20=20=2010005=20=20=20=20=20=20=20=20=20TEST=20CIDER=20KEG=2050L=
+=204.5%=20=20=20=20=20=20=20=20=20=20=2050L=20=20=20=20=20=201=20=20=20120.=
+00=20=205000000000005<BR>0=20=20=20=20=20WEBREF=20=20=20=20=20=20=20Website=
+=20Reference=20=20=20=20=20=20=20=20=20=20=20=20=20=20=20=20=20=201=20=20=
+=20=20=20=20=20=201<BR>009990001<BR>1=20=20=20=20=2010006=20=20=20=20=20=
+=20=20=20=20SUPPLIER=20FUEL=20SURCHARGE=20=20=20=20=20=20=20=20=20=20=20=20=
+=20=20=20=20=20=20=20=20=20=20=20=20=20=201=20=20=20=20=201.00<BR><BR>Total=
+=20Goods=20Value:=20=20=20=20292.49<BR>Total=20VAT=20Value=20=20:=20=20=20=
+=2058.50<BR>-----------<BR>Total=20Value=20=20=20=20=20=20:=20=20=20=20350.=
+99<BR></PRE></FONT></BODY></HTML>
+----_NmP-ada377e5ef1fac6d-Part_1--

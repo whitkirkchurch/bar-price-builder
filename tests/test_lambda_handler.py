@@ -9,7 +9,7 @@ import pytest
 import lambda_handler
 
 FIXTURES_DIR = Path(__file__).parent / "fixtures" / "emails"
-HB_CLARK_EMAIL = FIXTURES_DIR / "hb_clark_sales_order_ack.eml"
+SUPPLIER_SALES_ORDER_ACK_EMAIL = FIXTURES_DIR / "supplier_sales_order_ack.eml"
 
 
 @pytest.fixture
@@ -39,7 +39,7 @@ def test_resolve_s3_location_decodes_url_encoded_key() -> None:
 
 
 def test_handler_sends_success_reply(ses_env) -> None:
-    raw_email = HB_CLARK_EMAIL.read_bytes()
+    raw_email = SUPPLIER_SALES_ORDER_ACK_EMAIL.read_bytes()
     mock_message = MagicMock()
     mock_report = MagicMock()
     mock_report.summary.parsed_rows = 2
@@ -51,10 +51,10 @@ def test_handler_sends_success_reply(ses_env) -> None:
         patch("lambda_handler.extract_supplier_confirmation_text", return_value="confirmation text"),
         patch("lambda_handler.run_supplier_cost_updates", return_value=mock_report),
         patch("lambda_handler.boto3.client", return_value=ses_client),
-        patch("lambda_handler.get_sender_address", return_value="ZOE.LLOYD@hbclark.co.uk"),
+        patch("lambda_handler.get_sender_address", return_value="jane.doe@example.com"),
         patch(
             "lambda_handler.get_message_id",
-            return_value="<de736877-f4a0-96c6-3baa-b2b2930b3e0c@hbclark.co.uk>",
+            return_value="<test-sales-order-ack-001@example.com>",
         ),
         patch("lambda_handler.format_supplier_update_report", return_value="Supplier cost update completed."),
     ):
@@ -64,7 +64,7 @@ def test_handler_sends_success_reply(ses_env) -> None:
     assert json.loads(response["body"])["reply_sent"] is True
     ses_client.send_raw_email.assert_called_once()
     raw_message = ses_client.send_raw_email.call_args.kwargs["RawMessage"]["Data"].decode("utf-8")
-    assert "ZOE.LLOYD@hbclark.co.uk" in raw_message
+    assert "jane.doe@example.com" in raw_message
     assert "Supplier cost update completed." in raw_message
 
 
@@ -75,8 +75,8 @@ def test_handler_sends_failure_reply_when_extraction_fails(
     mock_boto_client,
     ses_env,
 ) -> None:
-    raw_email = b"""From: operator@whitkirkchurch.org.uk
-To: supplier-updates@example.org.uk
+    raw_email = b"""From: john.doe@example.com
+To: supplier-data@bartender.whitkirk.com
 Subject: Empty
 MIME-Version: 1.0
 Content-Type: text/plain; charset=UTF-8
@@ -116,7 +116,7 @@ def test_handler_does_not_reply_when_sender_missing(
 
 
 def test_handler_reports_loyverse_failure(ses_env) -> None:
-    raw_email = HB_CLARK_EMAIL.read_bytes()
+    raw_email = SUPPLIER_SALES_ORDER_ACK_EMAIL.read_bytes()
     ses_client = MagicMock()
 
     with (
@@ -128,7 +128,7 @@ def test_handler_reports_loyverse_failure(ses_env) -> None:
             side_effect=ValueError("LOYVERSE_PAT environment variable is not set"),
         ),
         patch("lambda_handler.boto3.client", return_value=ses_client),
-        patch("lambda_handler.get_sender_address", return_value="ZOE.LLOYD@hbclark.co.uk"),
+        patch("lambda_handler.get_sender_address", return_value="jane.doe@example.com"),
         patch("lambda_handler.get_message_id", return_value=None),
     ):
         response = lambda_handler.handler(_s3_event(), None)

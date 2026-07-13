@@ -54,17 +54,17 @@ class TestSupplierDataParsing:
     def test_parse_supplier_confirmation_rows_handles_space_separated_rows(self) -> None:
         text = """
         Quantity Code Description Size Pack Price EAN code
-        1 10045 BLACK SHEEP BEST BITTER KEG 11G 3.8%11G 1 140.82 5024583088007
-        1 24878 REKORDERLIG WILD BERRIES 3.4% 15 X 5500ML 15 47.52 7311100450422
+        1 50001 TEST ALE KEG 11G 3.8%11G 1 99.99 6000000000001
+        1 50002 TEST CIDER CASE 15 X 5500ML 15 45.00 6000000000002
         0 WEBREF Website Reference 1 1
         """
         rows = parse_supplier_confirmation_rows(text)
         assert len(rows) == 2
-        assert rows[0]["supplier_code"] == 10045
-        assert rows[0]["price_pence"] == 14082
-        assert rows[0]["description"] == "BLACK SHEEP BEST BITTER KEG 11G"
+        assert rows[0]["supplier_code"] == 50001
+        assert rows[0]["price_pence"] == 9999
+        assert rows[0]["description"] == "TEST ALE KEG 11G"
         assert rows[0]["size"] == "3.8%11G"
-        assert rows[1]["supplier_code"] == 24878
+        assert rows[1]["supplier_code"] == 50002
         assert rows[1]["size"] == "15 X 5500ML"
 
     def test_parse_supplier_confirmation_rows_handles_missing_header(self) -> None:
@@ -87,11 +87,11 @@ class TestSupplierDataParsing:
     def test_parse_supplier_confirmation_rows_handles_whitespace(self) -> None:
         text = """
         Quantity Code        Description      Size Pack Price   EAN code
-        1        10001       Vodka            1L   6    12.50     5053990107339
+        1        10001       Vodka            1L   6    12.50     6000000000001
         """
         rows = parse_supplier_confirmation_rows(text)
         assert len(rows) == 1
-        assert rows[0]["ean"] == "5053990107339"
+        assert rows[0]["ean"] == "6000000000001"
 
 
 class TestSupplierCodeMapping:

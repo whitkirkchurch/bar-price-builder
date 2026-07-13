@@ -124,13 +124,13 @@ class TestTillProductBuilding:
                         "variant_id": "v-1",
                         "sku": "1001",
                         "default_price": 12.50,
-                        "barcode": "  5053990107339  ",
+                        "barcode": "  6000000000001  ",
                     },
                 ],
             },
         ]
         products = build_till_products(items)
-        assert products[1001]["barcode"] == "5053990107339"
+        assert products[1001]["barcode"] == "6000000000001"
 
 
 class TestVariantCostExtraction:
