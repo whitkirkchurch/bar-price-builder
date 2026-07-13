@@ -40,6 +40,12 @@ variable "ses_feedback_email" {
   type        = string
 }
 
+variable "approved_sender_domains" {
+  description = "Comma-separated email domains allowed to trigger supplier cost updates (outer From/Reply-To)."
+  type        = string
+  default     = "whitkirkchurch.org.uk"
+}
+
 variable "loyverse_pat" {
   description = "Loyverse personal access token for API updates."
   type        = string

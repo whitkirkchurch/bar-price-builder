@@ -9,6 +9,8 @@ from supplier_email import (
     extract_supplier_confirmation_text,
     get_message_id,
     get_sender_address,
+    is_approved_sender,
+    parse_approved_sender_domains,
     parse_raw_email,
 )
 
@@ -68,6 +70,19 @@ Quantity Code Description Size Pack Price EAN code
 """
     message = parse_raw_email(raw)
     assert get_sender_address(message) == "jane.doe@example.com"
+
+
+def test_parse_approved_sender_domains_normalizes_values() -> None:
+    assert parse_approved_sender_domains(" whitkirkchurch.org.uk , @Example.COM ") == frozenset(
+        {"whitkirkchurch.org.uk", "example.com"},
+    )
+
+
+def test_is_approved_sender_matches_domain_case_insensitively() -> None:
+    domains = frozenset({"whitkirkchurch.org.uk"})
+    assert is_approved_sender("Nick@WhitkirkChurch.org.uk", domains) is True
+    assert is_approved_sender("someone@example.com", domains) is False
+    assert is_approved_sender("not-an-email", domains) is False
 
 
 def test_extract_supplier_confirmation_text_raises_when_missing() -> None:

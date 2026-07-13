@@ -118,10 +118,13 @@ You must have `LOYVERSE_PAT`, `AIRTABLE_PAT`, `AIRTABLE_BASE_ID`, and `AIRTABLE_
 
 You can also forward supplier confirmation emails to a dedicated inbound address. SES stores the raw message in S3 and invokes a Lambda that:
 
-1. Extracts the confirmation table from the email body or `.txt` attachment
-2. Seeds any new supplier codes and product labels in Airtable
-3. Applies Loyverse cost/EAN updates (`--apply` behaviour)
-4. Replies to the sender with a plain-text report, including any unmapped supplier codes and newly seeded products
+1. Accepts messages only when the outer From/Reply-To is on an approved domain (default `whitkirkchurch.org.uk`)
+2. Extracts the confirmation table from the email body or `.txt` attachment
+3. Seeds any new supplier codes and product labels in Airtable
+4. Applies Loyverse cost/EAN updates (`--apply` behaviour)
+5. Replies to the sender with a plain-text report, including any unmapped supplier codes and newly seeded products
+
+Unapproved senders are ignored (no processing, no reply).
 
 For local debugging without deploying, use:
 

@@ -20,6 +20,7 @@ def ses_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("AIRTABLE_PAT", "test-airtable-token")
     monkeypatch.setenv("AIRTABLE_BASE_ID", "appTEST")
     monkeypatch.setenv("AIRTABLE_SUPPLIER_MAPPING_TABLE_ID", "tblTEST")
+    monkeypatch.setenv("APPROVED_SENDER_DOMAINS", "whitkirkchurch.org.uk")
 
 
 def _s3_event(key: str = "message-id-123") -> dict:
@@ -55,7 +56,7 @@ def test_handler_sends_success_reply(ses_env) -> None:
         patch("lambda_handler.AirtableSupplierMappingStore.from_env", return_value=MagicMock()),
         patch("lambda_handler.run_supplier_cost_updates", return_value=mock_report),
         patch("lambda_handler.boto3.client", return_value=ses_client),
-        patch("lambda_handler.get_sender_address", return_value="jane.doe@example.com"),
+        patch("lambda_handler.get_sender_address", return_value="jane.doe@whitkirkchurch.org.uk"),
         patch(
             "lambda_handler.get_message_id",
             return_value="<test-sales-order-ack-001@example.com>",
@@ -68,8 +69,41 @@ def test_handler_sends_success_reply(ses_env) -> None:
     assert json.loads(response["body"])["reply_sent"] is True
     ses_client.send_raw_email.assert_called_once()
     raw_message = ses_client.send_raw_email.call_args.kwargs["RawMessage"]["Data"].decode("utf-8")
-    assert "jane.doe@example.com" in raw_message
+    assert "jane.doe@whitkirkchurch.org.uk" in raw_message
     assert "Supplier cost update completed." in raw_message
+
+
+@patch("lambda_handler.boto3.client")
+@patch("lambda_handler._load_raw_email_from_s3")
+def test_handler_ignores_unapproved_sender(
+    mock_load_email,
+    mock_boto_client,
+    ses_env,
+) -> None:
+    raw_email = b"""From: stranger@example.com
+To: supplier-updates@example.org.uk
+Subject: Empty
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+
+Quantity Code Description Size Pack Price EAN code
+1 10001 TEST ALE KEG 11G 3.8% 11G 1 99.99 5000000000001
+"""
+    mock_load_email.return_value = raw_email
+    ses_client = MagicMock()
+    mock_boto_client.return_value = ses_client
+
+    with patch("lambda_handler.run_supplier_cost_updates") as mock_run:
+        response = lambda_handler.handler(_s3_event(), None)
+
+    assert response["statusCode"] == 200
+    body = json.loads(response["body"])
+    assert body["reply_sent"] is False
+    assert body["reason"] == "unapproved_sender"
+    assert body["sender"] == "stranger@example.com"
+    mock_run.assert_not_called()
+    ses_client.send_email.assert_not_called()
+    ses_client.send_raw_email.assert_not_called()
 
 
 @patch("lambda_handler.boto3.client")
@@ -79,7 +113,7 @@ def test_handler_sends_failure_reply_when_extraction_fails(
     mock_boto_client,
     ses_env,
 ) -> None:
-    raw_email = b"""From: john.doe@example.com
+    raw_email = b"""From: john.doe@whitkirkchurch.org.uk
 To: supplier-data@bartender.whitkirk.com
 Subject: Empty
 MIME-Version: 1.0
@@ -133,7 +167,7 @@ def test_handler_reports_loyverse_failure(ses_env) -> None:
             side_effect=ValueError("LOYVERSE_PAT environment variable is not set"),
         ),
         patch("lambda_handler.boto3.client", return_value=ses_client),
-        patch("lambda_handler.get_sender_address", return_value="jane.doe@example.com"),
+        patch("lambda_handler.get_sender_address", return_value="jane.doe@whitkirkchurch.org.uk"),
         patch("lambda_handler.get_message_id", return_value=None),
     ):
         response = lambda_handler.handler(_s3_event(), None)
