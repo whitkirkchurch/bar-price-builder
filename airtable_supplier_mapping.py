@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Any
-from urllib.parse import quote
 
 import requests
 
@@ -11,7 +10,7 @@ if TYPE_CHECKING:
     from supplier_data import SupplierCodeMapEntry, SupplierCodePluMapping, SupplierRow
 
 AIRTABLE_API_URL = "https://api.airtable.com/v0"
-DEFAULT_TABLE_NAME = "Supplier mapping"
+AIRTABLE_WEB_BASE_URL = "https://airtable.com"
 FIELD_SUPPLIER_CODE = "Supplier Code"
 FIELD_LABEL = "Label"
 FIELD_IGNORE = "Ignore"
@@ -28,20 +27,28 @@ class SupplierMappingRecord:
     mapping: SupplierCodePluMapping | None
 
 
+def build_table_url(base_id: str, table_id: str) -> str:
+    return f"{AIRTABLE_WEB_BASE_URL}/{base_id}/{table_id}"
+
+
+def build_record_url(base_id: str, table_id: str, record_id: str) -> str:
+    return f"{AIRTABLE_WEB_BASE_URL}/{base_id}/{table_id}/{record_id}"
+
+
 class AirtableSupplierMappingStore:
     def __init__(
         self,
         *,
         personal_access_token: str,
         base_id: str,
-        table_name: str = DEFAULT_TABLE_NAME,
+        table_id: str,
         session: requests.Session | None = None,
     ) -> None:
         self._personal_access_token = personal_access_token
         self._base_id = base_id
-        self._table_name = table_name
-        self._table_path = quote(table_name, safe="")
+        self._table_id = table_id
         self._session = session or requests.Session()
+        self._records_cache: list[SupplierMappingRecord] | None = None
 
     @classmethod
     def from_env(cls) -> AirtableSupplierMappingStore:
@@ -55,12 +62,25 @@ class AirtableSupplierMappingStore:
             msg = "AIRTABLE_BASE_ID environment variable is not set"
             raise ValueError(msg)
 
-        table_name = os.getenv("AIRTABLE_SUPPLIER_MAPPING_TABLE", DEFAULT_TABLE_NAME)
+        table_id = os.getenv("AIRTABLE_SUPPLIER_MAPPING_TABLE_ID")
+        if not table_id:
+            msg = "AIRTABLE_SUPPLIER_MAPPING_TABLE_ID environment variable is not set"
+            raise ValueError(msg)
+
         return cls(
             personal_access_token=personal_access_token,
             base_id=base_id,
-            table_name=table_name,
+            table_id=table_id,
         )
+
+    def get_table_url(self) -> str:
+        return build_table_url(self._base_id, self._table_id)
+
+    def get_record_urls_by_code(self) -> dict[int, str]:
+        return {
+            record.supplier_code: build_record_url(self._base_id, self._table_id, record.record_id)
+            for record in self._list_records()
+        }
 
     def get_entries(self) -> dict[int, SupplierCodeMapEntry]:
         return {record.supplier_code: _record_to_entry(record) for record in self._list_records()}
@@ -114,9 +134,12 @@ class AirtableSupplierMappingStore:
         }
 
     def _records_url(self) -> str:
-        return f"{AIRTABLE_API_URL}/{self._base_id}/{self._table_path}"
+        return f"{AIRTABLE_API_URL}/{self._base_id}/{self._table_id}"
 
     def _list_records(self) -> list[SupplierMappingRecord]:
+        if self._records_cache is not None:
+            return self._records_cache
+
         records: list[SupplierMappingRecord] = []
         offset: str | None = None
 
@@ -138,9 +161,11 @@ class AirtableSupplierMappingStore:
 
             offset = payload.get("offset")
             if offset is None:
+                self._records_cache = records
                 return records
 
-    def _create_records(self, records: list[dict[str, Any]]) -> None:
+    def _create_records(self, records: list[dict[str, Any]]) -> list[dict[str, Any]]:
+        created_records: list[dict[str, Any]] = []
         for chunk in _chunked(records, 10):
             response = self._session.post(
                 self._records_url(),
@@ -149,8 +174,17 @@ class AirtableSupplierMappingStore:
                 timeout=30,
             )
             response.raise_for_status()
+            created_records.extend(response.json().get("records", []))
+
+        if self._records_cache is not None:
+            self._records_cache.extend(_parse_record(record) for record in created_records)
+
+        return created_records
 
     def _patch_records(self, records: list[dict[str, Any]]) -> None:
+        if not records:
+            return
+
         for chunk in _chunked(records, 10):
             response = self._session.patch(
                 self._records_url(),
@@ -159,6 +193,24 @@ class AirtableSupplierMappingStore:
                 timeout=30,
             )
             response.raise_for_status()
+
+        if self._records_cache is not None:
+            self._apply_patches_to_cache(records)
+
+    def _apply_patches_to_cache(self, records: list[dict[str, Any]]) -> None:
+        if self._records_cache is None:
+            return
+
+        labels_by_id = {
+            record["id"]: str(record["fields"][FIELD_LABEL]) for record in records if FIELD_LABEL in record["fields"]
+        }
+        if not labels_by_id:
+            return
+
+        self._records_cache = [
+            replace(record, label=labels_by_id[record.record_id]) if record.record_id in labels_by_id else record
+            for record in self._records_cache
+        ]
 
 
 def _stringify_identifier(value: int | str) -> str:

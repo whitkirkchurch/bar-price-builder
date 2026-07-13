@@ -19,6 +19,7 @@ def ses_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("LOYVERSE_PAT", "test-token")
     monkeypatch.setenv("AIRTABLE_PAT", "test-airtable-token")
     monkeypatch.setenv("AIRTABLE_BASE_ID", "appTEST")
+    monkeypatch.setenv("AIRTABLE_SUPPLIER_MAPPING_TABLE_ID", "tblTEST")
 
 
 def _s3_event(key: str = "message-id-123") -> dict:

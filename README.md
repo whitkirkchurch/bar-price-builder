@@ -76,7 +76,7 @@ When you have a supplier order confirmation text file, you can calculate per-uni
 
 1. Save the confirmation text to a local file, for example `data/supplier_confirmation.txt`
 1. Map each supplier code to exactly one PLU in the Airtable **Products** base, **Supplier mapping** table (`PLU` and `Servings per Unit` columns)
-1. Set `AIRTABLE_PAT` and `AIRTABLE_BASE_ID` in your environment
+1. Set `AIRTABLE_PAT`, `AIRTABLE_BASE_ID`, and `AIRTABLE_SUPPLIER_MAPPING_TABLE_ID` in your environment
 1. Run a dry run first:
 
 ```
@@ -112,7 +112,7 @@ When `--apply` is used, API writes are only sent for rows where the cost has act
 
 EAN updates are also written when changed, but only for mappings where `servings_per_unit` is exactly `1`.
 
-You must have `LOYVERSE_PAT`, `AIRTABLE_PAT`, and `AIRTABLE_BASE_ID` set in your environment for API access.
+You must have `LOYVERSE_PAT`, `AIRTABLE_PAT`, `AIRTABLE_BASE_ID`, and `AIRTABLE_SUPPLIER_MAPPING_TABLE_ID` set in your environment for API access.
 
 #### Processing forwarded supplier emails (AWS Lambda)
 

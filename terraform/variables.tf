@@ -52,6 +52,11 @@ variable "airtable_base_id" {
   type        = string
 }
 
+variable "airtable_supplier_mapping_table_id" {
+  description = "Airtable table ID for the Supplier mapping table."
+  type        = string
+}
+
 variable "lambda_python_runtime" {
   description = "Python runtime for the supplier email Lambda."
   type        = string

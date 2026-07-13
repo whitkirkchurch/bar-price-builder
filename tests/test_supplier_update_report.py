@@ -29,6 +29,11 @@ def _mapping_store() -> MagicMock:
     }
     store.update_labels.return_value = 0
     store.seed_missing_codes.return_value = []
+    store.get_record_urls_by_code.return_value = {
+        10001: "https://airtable.com/appTEST/tblTEST/rec1",
+        19999: "https://airtable.com/appTEST/tblTEST/recNew",
+    }
+    store.get_table_url.return_value = "https://airtable.com/appTEST/tblTEST"
     return store
 
 
@@ -64,6 +69,54 @@ def test_format_supplier_update_report_includes_unmapped_codes() -> None:
     assert "Unmapped supplier codes (add PLU mapping in Airtable)" in body
     assert "19999 | Mystery Spirit | 1L" in body
     assert "Missing supplier codes: 1" in body
+
+
+def test_format_supplier_update_report_includes_airtable_links() -> None:
+    record_url = "https://airtable.com/appTEST/tblTEST/recNew"
+    table_url = "https://airtable.com/appTEST/tblTEST"
+    report = SupplierUpdateReport(
+        summary=SupplierUpdateSummary(
+            parsed_rows=1,
+            mapped_rows=0,
+            missing_supplier_codes=1,
+            ignored_supplier_rows=0,
+            missing_plus_on_till=0,
+            rows_with_changed_cost=0,
+            rows_with_changed_ean=0,
+            applied_updates=0,
+            failed_updates=0,
+            skipped_unchanged=0,
+        ),
+        newly_seeded_rows=[
+            {
+                "supplier_code": 19999,
+                "description": "Mystery Spirit",
+                "size": "1L",
+                "pack": 6,
+                "price_pence": 2000,
+                "ean": "9999999999999",
+            },
+        ],
+        unmapped_rows=[
+            {
+                "supplier_code": 19999,
+                "description": "Mystery Spirit",
+                "size": "1L",
+                "pack": 6,
+                "price_pence": 2000,
+                "ean": "9999999999999",
+            },
+        ],
+        airtable_table_url=table_url,
+        airtable_record_urls_by_code={19999: record_url},
+        lines=[f"[UNMAPPED] Supplier 19999 | Mystery Spirit | 1L — {record_url}"],
+    )
+
+    body = format_supplier_update_report(report, apply=True)
+
+    assert record_url in body
+    assert "Please update new supplier codes in Airtable with PLU and servings data:" in body
+    assert table_url in body
 
 
 def test_format_supplier_update_report_includes_newly_seeded_products() -> None:

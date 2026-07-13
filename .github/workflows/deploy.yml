@@ -81,6 +81,7 @@ jobs:
           TF_VAR_loyverse_pat: ${{ secrets.TF_VAR_LOYVERSE_PAT }}
           TF_VAR_airtable_pat: ${{ secrets.TF_VAR_AIRTABLE_PAT }}
           TF_VAR_airtable_base_id: ${{ vars.TF_VAR_AIRTABLE_BASE_ID }}
+          TF_VAR_airtable_supplier_mapping_table_id: ${{ vars.TF_VAR_AIRTABLE_SUPPLIER_MAPPING_TABLE_ID }}
           TF_VAR_aws_region: ${{ vars.AWS_REGION }}
         run: terraform -chdir=terraform plan -input=false -out=tfplan
 
@@ -93,5 +94,6 @@ jobs:
           TF_VAR_loyverse_pat: ${{ secrets.TF_VAR_LOYVERSE_PAT }}
           TF_VAR_airtable_pat: ${{ secrets.TF_VAR_AIRTABLE_PAT }}
           TF_VAR_airtable_base_id: ${{ vars.TF_VAR_AIRTABLE_BASE_ID }}
+          TF_VAR_airtable_supplier_mapping_table_id: ${{ vars.TF_VAR_AIRTABLE_SUPPLIER_MAPPING_TABLE_ID }}
           TF_VAR_aws_region: ${{ vars.AWS_REGION }}
         run: terraform -chdir=terraform apply -input=false -auto-approve tfplan

@@ -7,6 +7,8 @@ import requests
 
 from airtable_supplier_mapping import AirtableSupplierMappingStore
 
+TABLE_ID = "tblTEST"
+
 
 def _record(
     *,
@@ -50,6 +52,7 @@ def test_get_entries_normalizes_airtable_records() -> None:
     store = AirtableSupplierMappingStore(
         personal_access_token="test-token",
         base_id="appTEST",
+        table_id=TABLE_ID,
         session=session,
     )
     entries = store.get_entries()
@@ -68,6 +71,9 @@ def test_seed_missing_codes_creates_only_new_rows() -> None:
     }
     list_response.raise_for_status.return_value = None
     create_response = MagicMock()
+    create_response.json.return_value = {
+        "records": [_record(record_id="recNew", supplier_code=19999, label="Mystery Spirit | 1L")],
+    }
     create_response.raise_for_status.return_value = None
     session.get.return_value = list_response
     session.post.return_value = create_response
@@ -75,6 +81,7 @@ def test_seed_missing_codes_creates_only_new_rows() -> None:
     store = AirtableSupplierMappingStore(
         personal_access_token="test-token",
         base_id="appTEST",
+        table_id=TABLE_ID,
         session=session,
     )
     new_rows = store.seed_missing_codes(
@@ -101,6 +108,7 @@ def test_seed_missing_codes_creates_only_new_rows() -> None:
     assert len(new_rows) == 1
     assert new_rows[0]["supplier_code"] == 19999
     session.post.assert_called_once()
+    assert session.post.call_args.args[0] == "https://api.airtable.com/v0/appTEST/tblTEST"
     payload = session.post.call_args.kwargs["json"]
     assert payload["records"][0]["fields"]["Supplier Code"] == "19999"
     assert payload["records"][0]["fields"]["Label"] == "Mystery Spirit | 1L"
@@ -109,8 +117,18 @@ def test_seed_missing_codes_creates_only_new_rows() -> None:
 def test_from_env_requires_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.delenv("AIRTABLE_PAT", raising=False)
     monkeypatch.delenv("AIRTABLE_BASE_ID", raising=False)
+    monkeypatch.delenv("AIRTABLE_SUPPLIER_MAPPING_TABLE_ID", raising=False)
 
     with pytest.raises(ValueError, match="AIRTABLE_PAT"):
+        AirtableSupplierMappingStore.from_env()
+
+
+def test_from_env_requires_table_id(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("AIRTABLE_PAT", "test-token")
+    monkeypatch.setenv("AIRTABLE_BASE_ID", "appTEST")
+    monkeypatch.delenv("AIRTABLE_SUPPLIER_MAPPING_TABLE_ID", raising=False)
+
+    with pytest.raises(ValueError, match="AIRTABLE_SUPPLIER_MAPPING_TABLE_ID"):
         AirtableSupplierMappingStore.from_env()
 
 
@@ -134,6 +152,7 @@ def test_get_entries_accepts_string_supplier_code_and_plu() -> None:
     store = AirtableSupplierMappingStore(
         personal_access_token="test-token",
         base_id="appTEST",
+        table_id=TABLE_ID,
         session=session,
     )
     entries = store.get_entries()
@@ -160,6 +179,7 @@ def test_get_entries_raises_for_invalid_servings_per_unit() -> None:
     store = AirtableSupplierMappingStore(
         personal_access_token="test-token",
         base_id="appTEST",
+        table_id=TABLE_ID,
         session=session,
     )
 
@@ -182,6 +202,7 @@ def test_update_labels_patches_changed_records_only() -> None:
     store = AirtableSupplierMappingStore(
         personal_access_token="test-token",
         base_id="appTEST",
+        table_id=TABLE_ID,
         session=session,
     )
     updated = store.update_labels(
@@ -212,8 +233,73 @@ def test_list_records_raises_for_http_errors() -> None:
     store = AirtableSupplierMappingStore(
         personal_access_token="test-token",
         base_id="appTEST",
+        table_id=TABLE_ID,
         session=session,
     )
 
     with pytest.raises(requests.HTTPError):
         store.get_entries()
+
+
+def test_get_record_urls_by_code_builds_airtable_links() -> None:
+    session = MagicMock()
+    response = MagicMock()
+    response.json.return_value = {
+        "records": [
+            _record(
+                record_id="rec1",
+                supplier_code=10001,
+                label="Vodka",
+                plu=1001,
+                servings_per_unit=1,
+            ),
+        ],
+    }
+    response.raise_for_status.return_value = None
+    session.get.return_value = response
+
+    store = AirtableSupplierMappingStore(
+        personal_access_token="test-token",
+        base_id="appTEST",
+        table_id=TABLE_ID,
+        session=session,
+    )
+
+    assert store.get_record_urls_by_code() == {
+        10001: "https://airtable.com/appTEST/tblTEST/rec1",
+    }
+    assert store.get_table_url() == "https://airtable.com/appTEST/tblTEST"
+
+
+def test_list_records_is_cached_for_the_lifetime_of_the_store() -> None:
+    session = MagicMock()
+    response = MagicMock()
+    response.json.return_value = {
+        "records": [_record(record_id="rec1", supplier_code=10001, label="Vodka")],
+    }
+    response.raise_for_status.return_value = None
+    session.get.return_value = response
+
+    store = AirtableSupplierMappingStore(
+        personal_access_token="test-token",
+        base_id="appTEST",
+        table_id=TABLE_ID,
+        session=session,
+    )
+
+    store.get_entries()
+    store.get_record_urls_by_code()
+    store.update_labels(
+        [
+            {
+                "supplier_code": 10001,
+                "description": "Vodka",
+                "size": "1L",
+                "pack": 6,
+                "price_pence": 1250,
+                "ean": "123",
+            },
+        ],
+    )
+
+    session.get.assert_called_once()

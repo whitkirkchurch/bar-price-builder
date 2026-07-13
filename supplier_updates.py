@@ -42,6 +42,8 @@ class SupplierUpdateReport:
     ignored_rows: list[tuple[SupplierRow, str]] = field(default_factory=list)
     missing_plu_rows: list[tuple[int, int]] = field(default_factory=list)
     failed_update_messages: list[str] = field(default_factory=list)
+    airtable_table_url: str | None = None
+    airtable_record_urls_by_code: dict[int, str] = field(default_factory=dict)
 
 
 @dataclass
@@ -89,6 +91,7 @@ class ProcessingContext:
     items_by_id: dict[str, dict]
     apply: bool
     report: SupplierUpdateReport
+    airtable_record_urls_by_code: dict[int, str]
 
 
 def round_loyverse_cost_pounds(value: float) -> float:
@@ -117,6 +120,13 @@ def has_ean_changed(current_ean: str | None, new_ean: str | None) -> bool:
 def _emit(context: ProcessingContext, line: str, *, style: str | None = None) -> None:
     del style
     context.report.lines.append(line)
+
+
+def _append_airtable_record_url(line: str, supplier_code: int, record_urls_by_code: dict[int, str]) -> str:
+    url = record_urls_by_code.get(supplier_code)
+    if url is None:
+        return line
+    return f"{line} — {url}"
 
 
 def _calculate_row_costs(row: SupplierRow, mapping: SupplierCodePluMapping) -> tuple[float, float, float]:
@@ -237,6 +247,7 @@ def _process_single_row(
     if entry is not None and entry["ignore"]:
         comment = entry["comment"] or f"{row['description']} | {row['size']}"
         line = f"[IGNORED] Supplier {row['supplier_code']} | {comment}"
+        line = _append_airtable_record_url(line, supplier_code, context.airtable_record_urls_by_code)
         context.report.ignored_rows.append((row, comment))
         _emit(context, line, style="cyan")
         return RowProcessResult(False, 0, 0, 1, 0, 0, 0, 0, 0, 0)
@@ -244,6 +255,7 @@ def _process_single_row(
     mapping = context.mappings_by_code.get(supplier_code)
     if mapping is None:
         line = f"[UNMAPPED] Supplier {row['supplier_code']} | {row['description']} | {row['size']}"
+        line = _append_airtable_record_url(line, supplier_code, context.airtable_record_urls_by_code)
         context.report.unmapped_rows.append(row)
         _emit(context, line, style="yellow")
         return RowProcessResult(False, 0, 1, 0, 0, 0, 0, 0, 0, 0)
@@ -279,6 +291,11 @@ def _process_single_row(
     update_status, update_error = _apply_single_cost_update(request)
     if update_status == "failed" and update_error:
         failed_line = f"[FAILED] Supplier {row['supplier_code']} | PLU {plu} {till_product['name']} | {update_error}"
+        failed_line = _append_airtable_record_url(
+            failed_line,
+            supplier_code,
+            context.airtable_record_urls_by_code,
+        )
         context.report.failed_update_messages.append(failed_line)
         context.report.errors.append(failed_line)
         _emit(context, failed_line, style="yellow")
@@ -298,6 +315,7 @@ def _process_single_row(
         change_context.cost_per_serving_pounds,
         change_context,
     )
+    cost_line = _append_airtable_record_url(cost_line, supplier_code, context.airtable_record_urls_by_code)
     style = "green" if (change_context.cost_changed or change_context.ean_changed) else None
     _emit(context, cost_line, style=style)
 
@@ -370,6 +388,8 @@ def run_supplier_cost_updates(
 
     entries_by_code = mapping_store.get_entries()
     mappings_by_code = get_active_mapping_by_code(entries_by_code)
+    report.airtable_record_urls_by_code = mapping_store.get_record_urls_by_code()
+    report.airtable_table_url = mapping_store.get_table_url()
     for warning in get_duplicate_plu_mapping_warnings(mappings_by_code):
         report.lines.append(warning)
 
@@ -384,6 +404,7 @@ def run_supplier_cost_updates(
         items_by_id=items_by_id,
         apply=apply,
         report=report,
+        airtable_record_urls_by_code=report.airtable_record_urls_by_code,
     )
 
     mapped_rows = 0
@@ -448,8 +469,35 @@ def _format_report_summary_lines(summary: SupplierUpdateSummary, *, apply: bool)
     return lines
 
 
+def _format_supplier_row_line(row: SupplierRow, *, record_urls_by_code: dict[int, str]) -> str:
+    line = f"{row['supplier_code']} | {row['description']} | {row['size']}"
+    url = record_urls_by_code.get(row["supplier_code"])
+    if url is None:
+        return f"  {line}"
+    return f"  {line} — {url}"
+
+
+def _existing_unmapped_rows(report: SupplierUpdateReport) -> list[SupplierRow]:
+    seeded_codes = {seeded_row["supplier_code"] for seeded_row in report.newly_seeded_rows}
+    return [row for row in report.unmapped_rows if row["supplier_code"] not in seeded_codes]
+
+
+def _format_airtable_mapping_footer(report: SupplierUpdateReport) -> list[str]:
+    if not (report.newly_seeded_rows or _existing_unmapped_rows(report)):
+        return []
+    if report.airtable_table_url is None:
+        return []
+
+    return [
+        "",
+        "Please update new supplier codes in Airtable with PLU and servings data:",
+        report.airtable_table_url,
+    ]
+
+
 def _format_report_detail_sections(report: SupplierUpdateReport) -> list[str]:
     sections: list[str] = []
+    record_urls_by_code = report.airtable_record_urls_by_code
 
     if report.newly_seeded_rows:
         sections.extend(
@@ -457,23 +505,22 @@ def _format_report_detail_sections(report: SupplierUpdateReport) -> list[str]:
                 "",
                 "New supplier products seeded in Airtable (add PLU mapping):",
                 *[
-                    f"  {row['supplier_code']} | {row['description']} | {row['size']}"
+                    _format_supplier_row_line(row, record_urls_by_code=record_urls_by_code)
                     for row in report.newly_seeded_rows
                 ],
             ],
         )
 
-    existing_unmapped_rows = [
-        row
-        for row in report.unmapped_rows
-        if row["supplier_code"] not in {seeded_row["supplier_code"] for seeded_row in report.newly_seeded_rows}
-    ]
+    existing_unmapped_rows = _existing_unmapped_rows(report)
     if existing_unmapped_rows:
         sections.extend(
             [
                 "",
                 "Unmapped supplier codes (add PLU mapping in Airtable):",
-                *[f"  {row['supplier_code']} | {row['description']} | {row['size']}" for row in existing_unmapped_rows],
+                *[
+                    _format_supplier_row_line(row, record_urls_by_code=record_urls_by_code)
+                    for row in existing_unmapped_rows
+                ],
             ],
         )
 
@@ -523,5 +570,7 @@ def format_supplier_update_report(report: SupplierUpdateReport, *, apply: bool, 
 
     if include_details and report.lines:
         sections.extend(["", "Details:", *report.lines])
+
+    sections.extend(_format_airtable_mapping_footer(report))
 
     return "\n".join(sections)
