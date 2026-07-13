@@ -140,17 +140,15 @@ data "aws_iam_policy_document" "github_deploy" {
     actions = [
       "s3:CreateBucket",
       "s3:DeleteBucket",
-      "s3:GetBucketLocation",
-      "s3:GetBucketPublicAccessBlock",
-      "s3:PutBucketPublicAccessBlock",
-      "s3:GetEncryptionConfiguration",
-      "s3:PutEncryptionConfiguration",
-      "s3:GetBucketVersioning",
-      "s3:PutBucketVersioning",
-      "s3:ListBucket",
-      "s3:GetObject",
-      "s3:PutObject",
+      "s3:DeleteBucketPolicy",
       "s3:DeleteObject",
+      "s3:Get*",
+      "s3:List*",
+      "s3:PutBucketPolicy",
+      "s3:PutBucketPublicAccessBlock",
+      "s3:PutBucketVersioning",
+      "s3:PutEncryptionConfiguration",
+      "s3:PutObject",
     ]
     resources = [
       "arn:aws:s3:::${var.project_name}-*",
@@ -189,6 +187,7 @@ data "aws_iam_policy_document" "github_deploy" {
       "iam:GetRole",
       "iam:GetRolePolicy",
       "iam:ListRolePolicies",
+      "iam:ListAttachedRolePolicies",
       "iam:PassRole",
       "iam:PutRolePolicy",
       "iam:DeleteRolePolicy",
@@ -202,12 +201,17 @@ data "aws_iam_policy_document" "github_deploy" {
     actions = [
       "logs:CreateLogGroup",
       "logs:DeleteLogGroup",
-      "logs:DescribeLogGroups",
       "logs:ListTagsForResource",
       "logs:PutRetentionPolicy",
       "logs:TagResource",
     ]
     resources = ["arn:aws:logs:*:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-*"]
+  }
+
+  statement {
+    sid       = "ProjectLogsDescribe"
+    actions   = ["logs:DescribeLogGroups"]
+    resources = ["*"]
   }
 
   statement {

@@ -81,8 +81,9 @@ terraform -chdir=terraform apply
 
 1. Add the SES domain verification TXT record from `terraform -chdir=terraform output ses_domain_verification_token`.
 2. Add the inbound MX record: `10 inbound-smtp.eu-west-1.amazonaws.com`.
-3. Verify the notification sender address in SES.
-4. Request SES production access to reply to arbitrary forwarders.
+3. Request SES production access to reply to arbitrary forwarders.
+
+Once the domain is verified, SES allows sending from any address on that domain (including `TF_VAR_NOTIFICATION_FROM_ADDRESS`). No separate per-address verification is required.
 
 ## Updating bootstrap
 
