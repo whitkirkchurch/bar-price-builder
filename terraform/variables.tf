@@ -5,9 +5,9 @@ variable "aws_region" {
 }
 
 variable "project_name" {
-  description = "Prefix used for resource names."
+  description = "Prefix used for resource names. Must match project_name in bootstrap/terraform.tfvars."
   type        = string
-  default     = "bar-price-builder"
+  default     = "bartender"
 }
 
 variable "domain_name" {

@@ -33,15 +33,16 @@ In the repository: **Settings → Secrets and variables → Actions**.
 
 **Variables:**
 
-| Name                               | Value (from bootstrap output)        |
-| ---------------------------------- | ------------------------------------ |
-| `AWS_REGION`                       | `eu-west-1`                          |
-| `AWS_ROLE_ARN`                     | `github_actions_role_arn` output     |
-| `TF_STATE_BUCKET`                  | `terraform_state_bucket` output      |
-| `TF_LOCK_TABLE`                    | `terraform_lock_table` output        |
-| `TF_VAR_DOMAIN_NAME`               | e.g. `whitkirk.com`                  |
-| `TF_VAR_INBOUND_EMAIL_ADDRESS`     | e.g. `supplier-updates@whitkirk.com` |
-| `TF_VAR_NOTIFICATION_FROM_ADDRESS` | e.g. `supplier-updates@whitkirk.com` |
+| Name                               | Value (from bootstrap output)                             |
+| ---------------------------------- | --------------------------------------------------------- |
+| `AWS_REGION`                       | `eu-west-1`                                               |
+| `AWS_ROLE_ARN`                     | `github_actions_role_arn` output                          |
+| `TF_STATE_BUCKET`                  | `terraform_state_bucket` output                           |
+| `TF_LOCK_TABLE`                    | `terraform_lock_table` output                             |
+| `TF_VAR_DOMAIN_NAME`               | e.g. `whitkirk.com`                                       |
+| `TF_VAR_INBOUND_EMAIL_ADDRESS`     | e.g. `supplier-updates@whitkirk.com`                      |
+| `TF_VAR_NOTIFICATION_FROM_ADDRESS` | e.g. `supplier-updates@whitkirk.com`                      |
+| `TF_VAR_PROJECT_NAME`              | Must match bootstrap `project_name` (default `bartender`) |
 
 **Secrets:**
 

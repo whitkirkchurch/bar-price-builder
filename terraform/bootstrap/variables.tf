@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "project_name" {
   description = "Prefix used for project resources and IAM role names."
   type        = string
-  default     = "bar-price-builder"
+  default     = "bartender"
 }
 
 variable "terraform_state_bucket_name" {
