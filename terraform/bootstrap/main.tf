@@ -119,6 +119,7 @@ data "aws_iam_policy_document" "github_deploy" {
     actions = [
       "s3:CreateBucket",
       "s3:DeleteBucket",
+      "s3:DeleteBucketLifecycle",
       "s3:DeleteBucketPolicy",
       "s3:DeleteObject",
       "s3:Get*",
@@ -127,6 +128,7 @@ data "aws_iam_policy_document" "github_deploy" {
       "s3:PutBucketPublicAccessBlock",
       "s3:PutBucketVersioning",
       "s3:PutEncryptionConfiguration",
+      "s3:PutLifecycleConfiguration",
       "s3:PutObject",
     ]
     resources = [
