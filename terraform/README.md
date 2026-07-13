@@ -90,7 +90,7 @@ Once the domain is verified, SES allows sending from any address on that domain 
 
 ## SES bounce and complaint alerts
 
-Terraform creates an SNS topic (`bartender-ses-feedback`) and emails bounce/complaint events for the SES domain identity to `TF_VAR_SES_FEEDBACK_EMAIL`.
+Terraform creates an SNS topic (`bartender-ses-feedback`) and emails bounce/complaint events for the SES domain identity to `TF_VAR_SES_FEEDBACK_EMAIL`. Email feedback forwarding on the domain identity is disabled so those events are not also sent to the outbound From/Return-Path address.
 
 After the first apply, confirm the SNS subscription from the inbox of that address (AWS sends a one-time confirmation email). Until confirmed, bounce/complaint alerts will not be delivered.
 

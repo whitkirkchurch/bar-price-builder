@@ -123,6 +123,16 @@ resource "aws_ses_identity_notification_topic" "complaint" {
   depends_on = [aws_sns_topic_policy.ses_feedback]
 }
 
+resource "aws_sesv2_email_identity_feedback_attributes" "main" {
+  email_identity           = aws_ses_domain_identity.main.domain
+  email_forwarding_enabled = false
+
+  depends_on = [
+    aws_ses_identity_notification_topic.bounce,
+    aws_ses_identity_notification_topic.complaint,
+  ]
+}
+
 resource "aws_ses_receipt_rule_set" "main" {
   rule_set_name = "${local.name_prefix}-inbound"
 }
