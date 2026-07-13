@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.5.0"
+  required_version = ">= 1.15.0"
 
   required_providers {
     aws = {
@@ -61,17 +61,6 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "terraform_state" 
   }
 }
 
-resource "aws_dynamodb_table" "terraform_locks" {
-  name         = "${var.project_name}-terraform-locks"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "LockID"
-
-  attribute {
-    name = "LockID"
-    type = "S"
-  }
-}
-
 resource "aws_iam_openid_connect_provider" "github" {
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
@@ -123,16 +112,6 @@ data "aws_iam_policy_document" "github_deploy" {
     sid       = "TerraformStateList"
     actions   = ["s3:ListBucket"]
     resources = [aws_s3_bucket.terraform_state.arn]
-  }
-
-  statement {
-    sid = "TerraformStateLock"
-    actions = [
-      "dynamodb:GetItem",
-      "dynamodb:PutItem",
-      "dynamodb:DeleteItem",
-    ]
-    resources = [aws_dynamodb_table.terraform_locks.arn]
   }
 
   statement {
