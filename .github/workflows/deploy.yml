@@ -5,43 +5,94 @@ on:
 
   push:
     branches: ["main"]
-    paths:
-      - "lambda_handler.py"
-      - "supplier_*.py"
-      - "loyverse.py"
-      - "config.py"
-      - "data/supplier_data.yaml"
-      - "lambda/**"
-      - "terraform/**"
-      - "scripts/build_lambda.sh"
-      - ".github/workflows/deploy.yml"
 
   pull_request:
     branches: ["main"]
-    paths:
-      - "lambda_handler.py"
-      - "supplier_*.py"
-      - "loyverse.py"
-      - "config.py"
-      - "data/supplier_data.yaml"
-      - "lambda/**"
-      - "terraform/**"
-      - "scripts/build_lambda.sh"
-      - ".github/workflows/deploy.yml"
 
 concurrency:
-  group: deploy-supplier-email
-  cancel-in-progress: false
+  group: deploy-supplier-email-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   id-token: write
   contents: read
 
 jobs:
-  terraform:
-    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      deploy: ${{ steps.filter.outputs.deploy }}
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - uses: dorny/paths-filter@6852f92c20ea7fd3b0c25de3b5112db3a98da050 # v3.0.2
+        id: filter
+        with:
+          filters: |
+            deploy:
+              - "lambda_handler.py"
+              - "supplier_*.py"
+              - "loyverse.py"
+              - "config.py"
+              - "data/supplier_data.yaml"
+              - "lambda/**"
+              - "terraform/**"
+              - "scripts/build_lambda.sh"
+              - ".github/workflows/deploy.yml"
+
+  static-analysis:
     runs-on: ubuntu-latest
 
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+
+      - name: Set up TFLint
+        uses: terraform-linters/setup-tflint@b480b8fcdaa6f2c577f8e4fa799e89e756bb7c93 # v6.2.2
+
+      - name: Build Lambda package
+        run: ./scripts/build_lambda.sh
+
+      - name: Verify Lambda handler imports
+        run: python -c "import sys; sys.path.insert(0, 'build/lambda'); import lambda_handler"
+
+      - name: Run pre-commit
+        uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
+
+  pytest:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+
+      - name: Install Poetry
+        run: pipx install poetry
+
+      - name: Install dependencies (including dev)
+        run: poetry install --with dev --no-interaction
+
+      - name: Run pytest
+        run: poetry run python -m pytest -v
+
+  terraform-plan:
+    needs: changes
+    if: >-
+      needs.changes.outputs.deploy == 'true' &&
+      (github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name == github.repository)
+    runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
@@ -82,8 +133,61 @@ jobs:
           TF_VAR_aws_region: ${{ vars.AWS_REGION }}
         run: terraform -chdir=terraform plan -input=false -out=tfplan
 
+      - name: Upload Terraform plan
+        uses: actions/upload-artifact@ea165f8d65b6e75ad540449e92b4886f43607fa02 # v4.6.2
+        with:
+          name: tfplan
+          path: terraform/tfplan
+          retention-days: 1
+
+  deploy:
+    needs: [changes, static-analysis, pytest, terraform-plan]
+    if: >-
+      always() &&
+      needs.static-analysis.result == 'success' &&
+      needs.pytest.result == 'success' &&
+      needs.changes.outputs.deploy == 'true' &&
+      needs.terraform-plan.result == 'success' &&
+      (github.event_name == 'push' || github.event_name == 'workflow_dispatch')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+
+      - name: Build Lambda package
+        run: ./scripts/build_lambda.sh
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.9.8
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@61815dcd50bd041e203e49132bacad1fd04d2708 # v5.1.1
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Download Terraform plan
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
+        with:
+          name: tfplan
+          path: terraform
+
+      - name: Terraform init
+        run: |
+          terraform -chdir=terraform init \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="key=bartender/supplier-email.tfstate" \
+            -backend-config="region=${{ vars.AWS_REGION }}" \
+            -backend-config="encrypt=true" \
+            -backend-config="dynamodb_table=${{ vars.TF_LOCK_TABLE }}"
+
       - name: Terraform apply
-        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
         env:
           TF_VAR_domain_name: ${{ vars.TF_VAR_DOMAIN_NAME }}
           TF_VAR_inbound_email_address: ${{ vars.TF_VAR_INBOUND_EMAIL_ADDRESS }}
