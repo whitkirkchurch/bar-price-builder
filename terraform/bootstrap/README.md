@@ -127,7 +127,7 @@ If your organisation requires least privilege, the applying principal needs at l
 
 Replace `YOUR_STATE_BUCKET_NAME` with the value you set in `terraform.tfvars`. Adjust the DynamoDB table name if you change `project_name`.
 
-Terraform may require additional `s3:Get*` / `iam:Get*` actions during planning; if `terraform plan` reports `AccessDenied`, add the missing action or use Option A for bootstrap only.
+Terraform may require additional `s3:Get*` / `iam:Get*` actions during planning; the deploy role uses `s3:Get*` and `s3:List*` on project buckets for this. If `terraform plan` still reports `AccessDenied`, add the missing action or use Option A for bootstrap only.
 
 ### What the bootstrap deploy role receives
 
@@ -139,7 +139,7 @@ Bootstrap also creates `bartender-github-actions-deploy` with a **separate** pol
 
 GitHub Actions uses this role via OIDC — it does **not** need the bootstrap permissions above.
 
-If application `terraform apply` fails with `AccessDenied` on read APIs such as `s3:GetBucketAcl`, `s3:GetBucketPolicy`, `logs:DescribeLogGroups`, or `iam:ListAttachedRolePolicies`, re-run bootstrap apply locally to refresh the deploy role policy in `main.tf`.
+If application `terraform apply` fails with `AccessDenied` on read APIs such as `s3:GetAccelerateConfiguration`, `logs:DescribeLogGroups`, or `iam:ListAttachedRolePolicies`, re-run bootstrap apply locally to refresh the deploy role policy in `main.tf`.
 
 ## Steps
 
