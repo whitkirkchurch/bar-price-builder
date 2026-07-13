@@ -147,6 +147,9 @@ data "aws_iam_policy_document" "github_deploy" {
       "s3:PutEncryptionConfiguration",
       "s3:GetBucketVersioning",
       "s3:PutBucketVersioning",
+      "s3:GetBucketPolicy",
+      "s3:PutBucketPolicy",
+      "s3:DeleteBucketPolicy",
       "s3:ListBucket",
       "s3:GetObject",
       "s3:PutObject",
@@ -189,6 +192,7 @@ data "aws_iam_policy_document" "github_deploy" {
       "iam:GetRole",
       "iam:GetRolePolicy",
       "iam:ListRolePolicies",
+      "iam:ListAttachedRolePolicies",
       "iam:PassRole",
       "iam:PutRolePolicy",
       "iam:DeleteRolePolicy",
@@ -202,12 +206,17 @@ data "aws_iam_policy_document" "github_deploy" {
     actions = [
       "logs:CreateLogGroup",
       "logs:DeleteLogGroup",
-      "logs:DescribeLogGroups",
       "logs:ListTagsForResource",
       "logs:PutRetentionPolicy",
       "logs:TagResource",
     ]
     resources = ["arn:aws:logs:*:${data.aws_caller_identity.current.account_id}:log-group:/aws/lambda/${var.project_name}-*"]
+  }
+
+  statement {
+    sid       = "ProjectLogsDescribe"
+    actions   = ["logs:DescribeLogGroups"]
+    resources = ["*"]
   }
 
   statement {

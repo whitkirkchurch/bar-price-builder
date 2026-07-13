@@ -139,6 +139,8 @@ Bootstrap also creates `bartender-github-actions-deploy` with a **separate** pol
 
 GitHub Actions uses this role via OIDC — it does **not** need the bootstrap permissions above.
 
+If application `terraform apply` fails with `AccessDenied` on read APIs such as `s3:GetBucketPolicy`, `logs:DescribeLogGroups`, or `iam:ListAttachedRolePolicies`, re-run bootstrap apply locally to refresh the deploy role policy in `main.tf`.
+
 ## Steps
 
 ### 1. Configure variables
