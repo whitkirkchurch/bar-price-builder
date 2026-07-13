@@ -186,23 +186,3 @@ def get_active_mapping_by_code(
             mappings_by_code[supplier_code] = entry["mapping"]
 
     return mappings_by_code
-
-
-def get_duplicate_plu_mapping_warnings(mappings_by_code: dict[int, SupplierCodePluMapping]) -> list[str]:
-    plu_to_supplier_codes: dict[int, set[int]] = {}
-
-    for supplier_code, mapping in mappings_by_code.items():
-        plu = mapping["plu"]
-        if plu not in plu_to_supplier_codes:
-            plu_to_supplier_codes[plu] = set()
-        plu_to_supplier_codes[plu].add(supplier_code)
-
-    warnings: list[str] = []
-    for plu, supplier_codes in sorted(plu_to_supplier_codes.items()):
-        if len(supplier_codes) <= 1:
-            continue
-
-        codes = ", ".join(str(code) for code in sorted(supplier_codes))
-        warnings.append(f"DUPLICATE MAPPING: PLU {plu} is mapped to multiple supplier codes: {codes}")
-
-    return warnings

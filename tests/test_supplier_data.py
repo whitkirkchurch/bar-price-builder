@@ -4,9 +4,7 @@ import pytest
 
 from supplier_data import (
     SupplierCodeMapEntry,
-    SupplierCodePluMapping,
     get_active_mapping_by_code,
-    get_duplicate_plu_mapping_warnings,
     parse_supplier_confirmation_rows,
 )
 
@@ -106,17 +104,3 @@ class TestSupplierCodeMapping:
         assert 10001 in active
         assert 10002 not in active
         assert 10003 not in active
-
-    def test_get_duplicate_plu_mapping_warnings_reports_duplicates(self) -> None:
-        mappings: dict[int, SupplierCodePluMapping] = {
-            10001: {"plu": 1001, "servings_per_unit": 1.0},
-            10002: {"plu": 1001, "servings_per_unit": 2.0},
-            10003: {"plu": 1003, "servings_per_unit": 1.0},
-        }
-
-        warnings = get_duplicate_plu_mapping_warnings(mappings)
-
-        assert len(warnings) == 1
-        assert "PLU 1001" in warnings[0]
-        assert "10001" in warnings[0]
-        assert "10002" in warnings[0]
