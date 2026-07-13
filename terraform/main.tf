@@ -63,10 +63,6 @@ resource "aws_ses_domain_identity" "main" {
   domain = var.domain_name
 }
 
-resource "aws_ses_email_identity" "notification_from" {
-  email = var.notification_from_address
-}
-
 resource "aws_ses_receipt_rule_set" "main" {
   rule_set_name = "${local.name_prefix}-inbound"
 }

@@ -18,11 +18,21 @@ variable "domain_name" {
 variable "inbound_email_address" {
   description = "Email address that receives forwarded supplier confirmations."
   type        = string
+
+  validation {
+    condition     = endswith(var.inbound_email_address, "@${var.domain_name}")
+    error_message = "inbound_email_address must be an address on domain_name."
+  }
 }
 
 variable "notification_from_address" {
-  description = "Verified SES sender address used for result reply emails."
+  description = "Sender address for Lambda reply emails. Must be on domain_name; sending is allowed once the SES domain identity is verified."
   type        = string
+
+  validation {
+    condition     = endswith(var.notification_from_address, "@${var.domain_name}")
+    error_message = "notification_from_address must be an address on domain_name."
+  }
 }
 
 variable "loyverse_pat" {
