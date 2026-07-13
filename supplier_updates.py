@@ -10,7 +10,6 @@ from supplier_data import (
     SupplierCodePluMapping,
     SupplierRow,
     get_active_mapping_by_code,
-    get_duplicate_plu_mapping_warnings,
     parse_supplier_confirmation_rows,
 )
 
@@ -390,8 +389,6 @@ def run_supplier_cost_updates(
     mappings_by_code = get_active_mapping_by_code(entries_by_code)
     report.airtable_record_urls_by_code = mapping_store.get_record_urls_by_code()
     report.airtable_table_url = mapping_store.get_table_url()
-    for warning in get_duplicate_plu_mapping_warnings(mappings_by_code):
-        report.lines.append(warning)
 
     items = get_loyverse_items()
     till_products = build_till_products(items)
