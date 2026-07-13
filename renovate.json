@@ -1,4 +1,11 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
-  "extends": ["github>whitkirkchurch/renovate-config"]
+  "extends": ["github>whitkirkchurch/renovate-config"],
+  "packageRules": [
+    {
+      "description": "Keep Terraform Core as a semver range instead of pinning an exact version",
+      "matchPackageNames": ["hashicorp/terraform"],
+      "rangeStrategy": "widen"
+    }
+  ]
 }
