@@ -27,6 +27,21 @@ resource "aws_s3_bucket_server_side_encryption_configuration" "inbound_email" {
   }
 }
 
+resource "aws_s3_bucket_lifecycle_configuration" "inbound_email" {
+  bucket = aws_s3_bucket.inbound_email.id
+
+  rule {
+    id     = "expire-inbound-email"
+    status = "Enabled"
+
+    filter {}
+
+    expiration {
+      days = 30
+    }
+  }
+}
+
 data "aws_iam_policy_document" "inbound_email_ses" {
   statement {
     sid    = "AllowSESPuts"

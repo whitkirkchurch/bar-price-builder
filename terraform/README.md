@@ -9,6 +9,8 @@ Infrastructure is deployed automatically by [`.github/workflows/deploy.yml`](../
 | **Bootstrap** (once)      | State bucket, GitHub OIDC provider, deploy IAM role | Run locally — see [bootstrap/README.md](bootstrap/README.md) | Local file in `terraform/bootstrap/` |
 | **Application** (ongoing) | SES, S3, Lambda, IAM for supplier email             | GitHub Actions on push to `main`                             | S3 remote state                      |
 
+Inbound supplier emails are stored in S3 for Lambda processing and expire after 30 days.
+
 ## Bootstrap (one-time)
 
 Bootstrap must be applied **before** GitHub Actions can deploy. It runs locally in the target AWS account and creates remote state storage plus the GitHub OIDC deploy role.
