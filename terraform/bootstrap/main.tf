@@ -184,13 +184,11 @@ data "aws_iam_policy_document" "github_deploy" {
     actions = [
       "iam:CreateRole",
       "iam:DeleteRole",
-      "iam:GetRole",
-      "iam:GetRolePolicy",
-      "iam:ListRolePolicies",
-      "iam:ListAttachedRolePolicies",
+      "iam:DeleteRolePolicy",
+      "iam:Get*",
+      "iam:List*",
       "iam:PassRole",
       "iam:PutRolePolicy",
-      "iam:DeleteRolePolicy",
       "iam:TagRole",
     ]
     resources = ["arn:aws:iam::${data.aws_caller_identity.current.account_id}:role/${var.project_name}-*"]
