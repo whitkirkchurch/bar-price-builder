@@ -4,10 +4,10 @@ Infrastructure is deployed automatically by [`.github/workflows/deploy.yml`](../
 
 ## Overview
 
-| Stage                     | What                                                                     | How                                                          | State                                |
-| ------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------ | ------------------------------------ |
-| **Bootstrap** (once)      | State bucket, DynamoDB lock table, GitHub OIDC provider, deploy IAM role | Run locally — see [bootstrap/README.md](bootstrap/README.md) | Local file in `terraform/bootstrap/` |
-| **Application** (ongoing) | SES, S3, Lambda, IAM for supplier email                                  | GitHub Actions on push to `main`                             | S3 remote state                      |
+| Stage                     | What                                                | How                                                          | State                                |
+| ------------------------- | --------------------------------------------------- | ------------------------------------------------------------ | ------------------------------------ |
+| **Bootstrap** (once)      | State bucket, GitHub OIDC provider, deploy IAM role | Run locally — see [bootstrap/README.md](bootstrap/README.md) | Local file in `terraform/bootstrap/` |
+| **Application** (ongoing) | SES, S3, Lambda, IAM for supplier email             | GitHub Actions on push to `main`                             | S3 remote state                      |
 
 ## Bootstrap (one-time)
 
@@ -38,7 +38,6 @@ In the repository: **Settings → Secrets and variables → Actions**.
 | `AWS_REGION`                                | `eu-west-1`                                                |
 | `AWS_ROLE_ARN`                              | `github_actions_role_arn` output                           |
 | `TF_STATE_BUCKET`                           | `terraform_state_bucket` output                            |
-| `TF_LOCK_TABLE`                             | `terraform_lock_table` output                              |
 | `TF_VAR_DOMAIN_NAME`                        | e.g. `whitkirk.com`                                        |
 | `TF_VAR_INBOUND_EMAIL_ADDRESS`              | e.g. `supplier-updates@whitkirk.com`                       |
 | `TF_VAR_NOTIFICATION_FROM_ADDRESS`          | e.g. `supplier-updates@whitkirk.com`                       |

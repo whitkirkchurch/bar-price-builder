@@ -6,8 +6,7 @@ Bootstrap creates:
 
 | Resource          | Purpose                                                     |
 | ----------------- | ----------------------------------------------------------- |
-| S3 bucket         | Terraform remote state for the application stack            |
-| DynamoDB table    | Terraform state locking                                     |
+| S3 bucket         | Terraform remote state (and native `.tflock` state locking) |
 | IAM OIDC provider | Lets GitHub Actions authenticate without access keys        |
 | IAM deploy role   | Assumed by GitHub Actions to run `terraform plan` / `apply` |
 
@@ -26,7 +25,7 @@ See also: [Application deployment](../README.md) (GitHub Actions, DNS, ongoing d
 
   The `Account` value must be the account you intend to deploy into.
 
-- **Terraform** >= 1.5 ([install guide](https://developer.hashicorp.com/terraform/install))
+- **Terraform** >= 1.15 ([install guide](https://developer.hashicorp.com/terraform/install))
 - **AWS CLI** configured for that account
 - **IAM permissions** for the principal running bootstrap — see [Required IAM permissions](#required-iam-permissions)
 
@@ -83,18 +82,6 @@ If your organisation requires least privilege, the applying principal needs at l
       "Resource": "arn:aws:s3:::YOUR_STATE_BUCKET_NAME"
     },
     {
-      "Sid": "BootstrapDynamoDB",
-      "Effect": "Allow",
-      "Action": [
-        "dynamodb:CreateTable",
-        "dynamodb:DeleteTable",
-        "dynamodb:DescribeTable",
-        "dynamodb:UpdateTable",
-        "dynamodb:TagResource"
-      ],
-      "Resource": "arn:aws:dynamodb:*:*:table/bartender-terraform-locks"
-    },
-    {
       "Sid": "BootstrapIAM",
       "Effect": "Allow",
       "Action": [
@@ -125,7 +112,7 @@ If your organisation requires least privilege, the applying principal needs at l
 }
 ```
 
-Replace `YOUR_STATE_BUCKET_NAME` with the value you set in `terraform.tfvars`. Adjust the DynamoDB table name if you change `project_name`.
+Replace `YOUR_STATE_BUCKET_NAME` with the value you set in `terraform.tfvars`.
 
 Terraform may require additional `s3:Get*` / `iam:Get*` actions during planning; the deploy role uses `s3:Get*` and `s3:List*` on project buckets for this. If `terraform plan` still reports `AccessDenied`, add the missing action or use Option A for bootstrap only.
 
@@ -133,7 +120,7 @@ Terraform may require additional `s3:Get*` / `iam:Get*` actions during planning;
 
 Bootstrap also creates `bartender-github-actions-deploy` with a **separate** policy (in `main.tf`) scoped to:
 
-- Read/write Terraform state in the state bucket and lock table
+- Read/write Terraform state in the state bucket (including S3 native `.tflock` files)
 - Manage application resources prefixed with `bartender-` (S3, Lambda, IAM, CloudWatch Logs)
 - Full SES access (for inbound rules and sending replies)
 - SNS create/update/delete on `${project_name}-*` topics (SES bounce/complaint alerts)
@@ -181,7 +168,6 @@ terraform output
 | ------------------------- | --------------------------------- |
 | `github_actions_role_arn` | GitHub variable `AWS_ROLE_ARN`    |
 | `terraform_state_bucket`  | GitHub variable `TF_STATE_BUCKET` |
-| `terraform_lock_table`    | GitHub variable `TF_LOCK_TABLE`   |
 | `aws_region`              | GitHub variable `AWS_REGION`      |
 
 Configure the remaining GitHub variables and `TF_VAR_LOYVERSE_PAT` secret as described in [../README.md#configure-github-repository-settings](../README.md#configure-github-repository-settings).

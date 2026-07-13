@@ -71,7 +71,7 @@ jobs:
             -backend-config="key=bartender/supplier-email.tfstate" \
             -backend-config="region=${{ vars.AWS_REGION }}" \
             -backend-config="encrypt=true" \
-            -backend-config="dynamodb_table=${{ vars.TF_LOCK_TABLE }}"
+            -backend-config="use_lockfile=true"
 
       - name: Terraform plan
         env:
