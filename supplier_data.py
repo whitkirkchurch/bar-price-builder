@@ -1,9 +1,13 @@
-from pathlib import Path
-from typing import Any, TypedDict
+from __future__ import annotations
+
+from typing import TYPE_CHECKING, Any, TypedDict
 
 import click
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 YAML_RT = YAML(typ="rt")
 YAML_RT.preserve_quotes = False
@@ -79,6 +83,56 @@ def _parse_price_pence(value: str) -> int | None:
         return None
 
 
+def _split_description_and_size(middle: list[str]) -> tuple[str, str]:
+    if not middle:
+        return "", ""
+    if len(middle) == 1:
+        return middle[0], ""
+
+    if len(middle) >= 3 and middle[-2].upper() == "X":
+        size = " ".join(middle[-3:])
+        description = " ".join(middle[:-3])
+        return description, size
+
+    size = middle[-1]
+    description = " ".join(middle[:-1])
+    return description, size
+
+
+def _parse_space_separated_row(raw_line: str) -> SupplierRow | None:
+    parts = raw_line.split()
+    if len(parts) < 7:
+        return None
+
+    quantity_text = parts[0]
+    supplier_code_text = parts[1]
+    if not quantity_text.isdigit() or not supplier_code_text.isdigit():
+        return None
+    if quantity_text == "0":
+        return None
+
+    pack_text = parts[-3]
+    price_text = parts[-2]
+    ean_text = parts[-1]
+    if not pack_text.isdigit():
+        return None
+
+    price_pence = _parse_price_pence(price_text)
+    if price_pence is None:
+        return None
+
+    description, size = _split_description_and_size(parts[2:-3])
+
+    return {
+        "supplier_code": int(supplier_code_text),
+        "description": description,
+        "size": size,
+        "pack": int(pack_text),
+        "price_pence": price_pence,
+        "ean": ean_text,
+    }
+
+
 def _parse_supplier_row(fields: dict[str, str]) -> SupplierRow | None:
     supplier_code_text = fields["Code"]
     pack_text = fields["Pack"]
@@ -103,6 +157,10 @@ def _parse_supplier_row(fields: dict[str, str]) -> SupplierRow | None:
     }
 
 
+def contains_supplier_confirmation_header(text: str) -> bool:
+    return _find_header_index(text.splitlines()) != -1
+
+
 def parse_supplier_confirmation_rows(text: str) -> list[SupplierRow]:
     parsed_rows: list[SupplierRow] = []
     lines = text.splitlines()
@@ -123,6 +181,8 @@ def parse_supplier_confirmation_rows(text: str) -> list[SupplierRow]:
             continue
 
         parsed_row = _parse_supplier_row(_slice_fields(raw_line, boundaries))
+        if parsed_row is None:
+            parsed_row = _parse_space_separated_row(raw_line)
         if parsed_row is not None:
             parsed_rows.append(parsed_row)
 
@@ -312,7 +372,7 @@ def seed_missing_supplier_codes(path: Path, rows: list[SupplierRow]) -> int:
     return added_count
 
 
-def warn_for_duplicate_plu_mappings(mappings_by_code: dict[int, SupplierCodePluMapping]) -> None:
+def get_duplicate_plu_mapping_warnings(mappings_by_code: dict[int, SupplierCodePluMapping]) -> list[str]:
     plu_to_supplier_codes: dict[int, set[int]] = {}
 
     for supplier_code, mapping in mappings_by_code.items():
@@ -321,14 +381,17 @@ def warn_for_duplicate_plu_mappings(mappings_by_code: dict[int, SupplierCodePluM
             plu_to_supplier_codes[plu] = set()
         plu_to_supplier_codes[plu].add(supplier_code)
 
+    warnings: list[str] = []
     for plu, supplier_codes in sorted(plu_to_supplier_codes.items()):
         if len(supplier_codes) <= 1:
             continue
 
         codes = ", ".join(str(code) for code in sorted(supplier_codes))
-        click.echo(
-            click.style(
-                f"DUPLICATE MAPPING: PLU {plu} is mapped to multiple supplier codes: {codes}",
-                fg="yellow",
-            ),
-        )
+        warnings.append(f"DUPLICATE MAPPING: PLU {plu} is mapped to multiple supplier codes: {codes}")
+
+    return warnings
+
+
+def warn_for_duplicate_plu_mappings(mappings_by_code: dict[int, SupplierCodePluMapping]) -> None:
+    for warning in get_duplicate_plu_mapping_warnings(mappings_by_code):
+        click.echo(click.style(warning, fg="yellow"))

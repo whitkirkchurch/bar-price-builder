@@ -1,0 +1,93 @@
+name: Deploy
+
+on:
+  workflow_dispatch:
+
+  push:
+    branches: ["main"]
+    paths:
+      - "lambda_handler.py"
+      - "supplier_*.py"
+      - "loyverse.py"
+      - "config.py"
+      - "data/supplier_data.yaml"
+      - "lambda/**"
+      - "terraform/**"
+      - "scripts/build_lambda.sh"
+      - ".github/workflows/deploy.yml"
+
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "lambda_handler.py"
+      - "supplier_*.py"
+      - "loyverse.py"
+      - "config.py"
+      - "data/supplier_data.yaml"
+      - "lambda/**"
+      - "terraform/**"
+      - "scripts/build_lambda.sh"
+      - ".github/workflows/deploy.yml"
+
+concurrency:
+  group: deploy-supplier-email
+  cancel-in-progress: false
+
+permissions:
+  id-token: write
+  contents: read
+
+jobs:
+  terraform:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Set up Python
+        uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6.3.0
+        with:
+          python-version: "3.13"
+
+      - name: Build Lambda package
+        run: ./scripts/build_lambda.sh
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@dfe3c3f87815947d99a8997f908cb6525fc44e9e # v4.0.1
+        with:
+          terraform_version: 1.9.8
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@00943011d9042930efac3dcd3a170e4273319bc8 # v5.1.0
+        with:
+          role-to-assume: ${{ vars.AWS_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Terraform init
+        run: |
+          terraform -chdir=terraform init \
+            -backend-config="bucket=${{ vars.TF_STATE_BUCKET }}" \
+            -backend-config="key=bar-price-builder/supplier-email.tfstate" \
+            -backend-config="region=${{ vars.AWS_REGION }}" \
+            -backend-config="encrypt=true" \
+            -backend-config="dynamodb_table=${{ vars.TF_LOCK_TABLE }}"
+
+      - name: Terraform plan
+        env:
+          TF_VAR_domain_name: ${{ vars.TF_VAR_DOMAIN_NAME }}
+          TF_VAR_inbound_email_address: ${{ vars.TF_VAR_INBOUND_EMAIL_ADDRESS }}
+          TF_VAR_notification_from_address: ${{ vars.TF_VAR_NOTIFICATION_FROM_ADDRESS }}
+          TF_VAR_loyverse_pat: ${{ secrets.TF_VAR_LOYVERSE_PAT }}
+          TF_VAR_aws_region: ${{ vars.AWS_REGION }}
+        run: terraform -chdir=terraform plan -input=false -out=tfplan
+
+      - name: Terraform apply
+        if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+        env:
+          TF_VAR_domain_name: ${{ vars.TF_VAR_DOMAIN_NAME }}
+          TF_VAR_inbound_email_address: ${{ vars.TF_VAR_INBOUND_EMAIL_ADDRESS }}
+          TF_VAR_notification_from_address: ${{ vars.TF_VAR_NOTIFICATION_FROM_ADDRESS }}
+          TF_VAR_loyverse_pat: ${{ secrets.TF_VAR_LOYVERSE_PAT }}
+          TF_VAR_aws_region: ${{ vars.AWS_REGION }}
+        run: terraform -chdir=terraform apply -input=false -auto-approve tfplan

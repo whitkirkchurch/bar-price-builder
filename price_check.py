@@ -1,7 +1,13 @@
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
+
 import click
 
-from loyverse import TillProduct
 from price_list import PluPrice, get_all_ignored_plus, get_all_plus_in_price_list
+
+if TYPE_CHECKING:
+    from loyverse import TillProduct
 
 
 def validate_till_prices(till_products: dict[int, TillProduct], plus_in_price_list: dict[int, PluPrice]) -> None:

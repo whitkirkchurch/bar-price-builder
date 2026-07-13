@@ -1,9 +1,14 @@
-from pathlib import Path
+from __future__ import annotations
+
+from typing import TYPE_CHECKING
 
 from click.testing import CliRunner
 
 import app
 from product_images import ProductImageSyncSummary
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 def test_build_product_images_command_dry_run(monkeypatch, tmp_path: Path) -> None:

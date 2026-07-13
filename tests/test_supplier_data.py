@@ -51,6 +51,22 @@ class TestSupplierDataParsing:
         rows = parse_supplier_confirmation_rows(text)
         assert rows == []
 
+    def test_parse_supplier_confirmation_rows_handles_space_separated_rows(self) -> None:
+        text = """
+        Quantity Code Description Size Pack Price EAN code
+        1 10045 BLACK SHEEP BEST BITTER KEG 11G 3.8%11G 1 140.82 5024583088007
+        1 24878 REKORDERLIG WILD BERRIES 3.4% 15 X 5500ML 15 47.52 7311100450422
+        0 WEBREF Website Reference 1 1
+        """
+        rows = parse_supplier_confirmation_rows(text)
+        assert len(rows) == 2
+        assert rows[0]["supplier_code"] == 10045
+        assert rows[0]["price_pence"] == 14082
+        assert rows[0]["description"] == "BLACK SHEEP BEST BITTER KEG 11G"
+        assert rows[0]["size"] == "3.8%11G"
+        assert rows[1]["supplier_code"] == 24878
+        assert rows[1]["size"] == "15 X 5500ML"
+
     def test_parse_supplier_confirmation_rows_handles_missing_header(self) -> None:
         text = """
         1        10001       Vodka            1L   6    12.50

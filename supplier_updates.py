@@ -1,6 +1,8 @@
-from dataclasses import dataclass
+from __future__ import annotations
+
+from dataclasses import dataclass, field
 from decimal import ROUND_HALF_UP, Decimal
-from pathlib import Path
+from typing import TYPE_CHECKING
 
 import click
 
@@ -10,12 +12,15 @@ from supplier_data import (
     SupplierCodePluMapping,
     SupplierRow,
     get_active_mapping_by_code,
+    get_duplicate_plu_mapping_warnings,
     get_supplier_code_entries,
     parse_supplier_confirmation_rows,
     seed_missing_supplier_codes,
     update_supplier_data_comments,
-    warn_for_duplicate_plu_mappings,
 )
+
+if TYPE_CHECKING:
+    from pathlib import Path
 
 
 @dataclass
@@ -30,6 +35,17 @@ class SupplierUpdateSummary:
     applied_updates: int
     failed_updates: int
     skipped_unchanged: int
+
+
+@dataclass
+class SupplierUpdateReport:
+    summary: SupplierUpdateSummary
+    lines: list[str] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+    unmapped_rows: list[SupplierRow] = field(default_factory=list)
+    ignored_rows: list[tuple[SupplierRow, str]] = field(default_factory=list)
+    missing_plu_rows: list[tuple[int, int]] = field(default_factory=list)
+    failed_update_messages: list[str] = field(default_factory=list)
 
 
 @dataclass
@@ -76,6 +92,8 @@ class ProcessingContext:
     till_products: dict[int, TillProduct]
     items_by_id: dict[str, dict]
     apply: bool
+    report: SupplierUpdateReport
+    log_to_console: bool
 
 
 def round_loyverse_cost_pounds(value: float) -> float:
@@ -99,6 +117,21 @@ def _normalize_ean(value: str | None) -> str | None:
 
 def has_ean_changed(current_ean: str | None, new_ean: str | None) -> bool:
     return _normalize_ean(current_ean) != _normalize_ean(new_ean)
+
+
+def _emit(context: ProcessingContext, line: str, *, style: str | None = None) -> None:
+    context.report.lines.append(line)
+    if not context.log_to_console:
+        return
+
+    if style == "green":
+        click.echo(click.style(line, fg="green"))
+    elif style == "cyan":
+        click.echo(click.style(line, fg="cyan"))
+    elif style == "yellow":
+        click.echo(click.style(line, fg="yellow"))
+    else:
+        click.echo(line)
 
 
 def _calculate_row_costs(row: SupplierRow, mapping: SupplierCodePluMapping) -> tuple[float, float, float]:
@@ -179,13 +212,13 @@ def _process_supplier_row(
     )
 
 
-def _log_cost_line(
+def _format_cost_line(
     row: SupplierRow,
     plu: int,
     item_name: str,
     new_cost_pounds: float,
     context: RowChangeContext,
-) -> None:
+) -> str:
     marker = "CHANGED" if (context.cost_changed or context.ean_changed) else "UNCHANGED"
     current_display = f"{context.current_cost_pounds:.2f}" if context.current_cost_pounds is not None else "unknown"
 
@@ -206,25 +239,7 @@ def _log_cost_line(
     else:
         ean_display = f"EAN {current_ean_display}"
 
-    line = f"[{marker}] Supplier {row['supplier_code']} | PLU {plu} {item_name} | {cost_display} | {ean_display}"
-    if context.cost_changed or context.ean_changed:
-        click.echo(click.style(line, fg="green"))
-        return
-    click.echo(line)
-
-
-def _log_ignored_supplier_row(row: SupplierRow, entry: SupplierCodeMapEntry) -> None:
-    comment = entry["comment"] or f"{row['description']} | {row['size']}"
-    click.echo(click.style(f"[IGNORED] Supplier {row['supplier_code']} | {comment}", fg="cyan"))
-
-
-def _log_unmapped_supplier_row(row: SupplierRow) -> None:
-    click.echo(
-        click.style(
-            f"[UNMAPPED] Supplier {row['supplier_code']} | {row['description']} | {row['size']}",
-            fg="yellow",
-        ),
-    )
+    return f"[{marker}] Supplier {row['supplier_code']} | PLU {plu} {item_name} | {cost_display} | {ean_display}"
 
 
 def _process_single_row(
@@ -235,24 +250,30 @@ def _process_single_row(
     supplier_code = row["supplier_code"]
     entry = context.entries_by_code.get(supplier_code)
     if entry is not None and entry["ignore"]:
-        _log_ignored_supplier_row(row, entry)
+        comment = entry["comment"] or f"{row['description']} | {row['size']}"
+        line = f"[IGNORED] Supplier {row['supplier_code']} | {comment}"
+        context.report.ignored_rows.append((row, comment))
+        _emit(context, line, style="cyan")
         return RowProcessResult(False, 0, 0, 1, 0, 0, 0, 0, 0, 0)
 
     mapping = context.mappings_by_code.get(supplier_code)
     if mapping is None:
-        _log_unmapped_supplier_row(row)
+        line = f"[UNMAPPED] Supplier {row['supplier_code']} | {row['description']} | {row['size']}"
+        context.report.unmapped_rows.append(row)
+        _emit(context, line, style="yellow")
         return RowProcessResult(False, 0, 1, 0, 0, 0, 0, 0, 0, 0)
 
     if row["pack"] <= 0:
-        click.echo(click.style(f"Supplier code {supplier_code} has invalid pack size {row['pack']}", fg="yellow"))
+        line = f"Supplier code {supplier_code} has invalid pack size {row['pack']}"
+        _emit(context, line, style="yellow")
         return RowProcessResult(False, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 
     plu = mapping["plu"]
     till_product = context.till_products.get(plu)
     if till_product is None:
-        click.echo(
-            click.style(f"PLU {plu} mapped from supplier code {supplier_code} not found on till", fg="yellow"),
-        )
+        line = f"PLU {plu} mapped from supplier code {supplier_code} not found on till"
+        context.report.missing_plu_rows.append((supplier_code, plu))
+        _emit(context, line, style="yellow")
         return RowProcessResult(False, 0, 0, 0, 1, 0, 0, 0, 0, 0)
 
     change_context = _process_supplier_row(row, mapping, till_product, context.items_by_id)
@@ -270,7 +291,13 @@ def _process_single_row(
         new_barcode=new_barcode,
     )
 
-    update_status, _update_error = _apply_single_cost_update(request)
+    update_status, update_error = _apply_single_cost_update(request)
+    if update_status == "failed" and update_error:
+        failed_line = f"[FAILED] Supplier {row['supplier_code']} | PLU {plu} {till_product['name']} | {update_error}"
+        context.report.failed_update_messages.append(failed_line)
+        context.report.errors.append(failed_line)
+        _emit(context, failed_line, style="yellow")
+
     if update_status == "updated" and item_snapshot is not None:
         _apply_successful_variant_update_to_snapshot(
             item_snapshot,
@@ -279,7 +306,15 @@ def _process_single_row(
             new_barcode,
         )
 
-    _log_cost_line(row, plu, till_product["name"], change_context.cost_per_serving_pounds, change_context)
+    cost_line = _format_cost_line(
+        row,
+        plu,
+        till_product["name"],
+        change_context.cost_per_serving_pounds,
+        change_context,
+    )
+    style = "green" if (change_context.cost_changed or change_context.ean_changed) else None
+    _emit(context, cost_line, style=style)
 
     status_counts = {
         "unchanged": (0, 0, 1),
@@ -303,31 +338,60 @@ def _process_single_row(
     )
 
 
+def _empty_summary() -> SupplierUpdateSummary:
+    return SupplierUpdateSummary(
+        parsed_rows=0,
+        mapped_rows=0,
+        missing_supplier_codes=0,
+        ignored_supplier_rows=0,
+        missing_plus_on_till=0,
+        rows_with_changed_cost=0,
+        rows_with_changed_ean=0,
+        applied_updates=0,
+        failed_updates=0,
+        skipped_unchanged=0,
+    )
+
+
 def run_supplier_cost_updates(
-    supplier_confirmation_file: Path,
+    confirmation_text: str,
     mapping_file: Path,
     apply: bool,
-) -> SupplierUpdateSummary:
-    click.echo("Reading supplier confirmation…")
-    rows = parse_supplier_confirmation_rows(supplier_confirmation_file.read_text())
+    *,
+    write_mapping: bool = True,
+    log_to_console: bool = True,
+) -> SupplierUpdateReport:
+    report = SupplierUpdateReport(summary=_empty_summary())
+
+    if log_to_console:
+        click.echo("Reading supplier confirmation…")
+
+    rows = parse_supplier_confirmation_rows(confirmation_text)
     if not rows:
-        msg = "No order rows were parsed from file."
+        msg = "No order rows were parsed from supplier confirmation."
+        report.errors.append(msg)
         raise ValueError(msg)
 
-    update_supplier_data_comments(mapping_file, rows)
-    seeded_codes = seed_missing_supplier_codes(mapping_file, rows)
-    if seeded_codes > 0:
-        click.echo(
-            click.style(
-                f"Added {seeded_codes} new supplier code entr{'y' if seeded_codes == 1 else 'ies'} to {mapping_file}",
-                fg="green",
-            ),
-        )
+    if write_mapping:
+        update_supplier_data_comments(mapping_file, rows)
+        seeded_codes = seed_missing_supplier_codes(mapping_file, rows)
+        if seeded_codes > 0 and log_to_console:
+            click.echo(
+                click.style(
+                    f"Added {seeded_codes} new supplier code entr{'y' if seeded_codes == 1 else 'ies'} to {mapping_file}",
+                    fg="green",
+                ),
+            )
+
     entries_by_code = get_supplier_code_entries(mapping_file)
     mappings_by_code = get_active_mapping_by_code(entries_by_code)
-    warn_for_duplicate_plu_mappings(mappings_by_code)
+    for warning in get_duplicate_plu_mapping_warnings(mappings_by_code):
+        if log_to_console:
+            click.echo(click.style(warning, fg="yellow"))
+        report.lines.append(warning)
 
-    click.echo("Fetching products from Loyverse…")
+    if log_to_console:
+        click.echo("Fetching products from Loyverse…")
     items = get_loyverse_items()
     till_products = build_till_products(items)
     items_by_id = {str(item.get("id", "")): item for item in items}
@@ -338,6 +402,8 @@ def run_supplier_cost_updates(
         till_products=till_products,
         items_by_id=items_by_id,
         apply=apply,
+        report=report,
+        log_to_console=log_to_console,
     )
 
     mapped_rows = 0
@@ -364,7 +430,7 @@ def run_supplier_cost_updates(
             ignored_rows += result.ignored_count
             missing_plus += result.missing_plu_count
 
-    return SupplierUpdateSummary(
+    report.summary = SupplierUpdateSummary(
         parsed_rows=len(rows),
         mapped_rows=mapped_rows,
         missing_supplier_codes=missing_codes,
@@ -376,9 +442,96 @@ def run_supplier_cost_updates(
         failed_updates=failed,
         skipped_unchanged=skipped,
     )
+    return report
 
 
-def print_supplier_update_summary(summary: SupplierUpdateSummary, apply: bool) -> None:
+def _format_report_summary_lines(summary: SupplierUpdateSummary, *, apply: bool) -> list[str]:
+    lines = [
+        "Supplier cost update completed.",
+        "",
+        f"Parsed supplier rows: {summary.parsed_rows}",
+        f"Mapped output rows: {summary.mapped_rows}",
+        f"Missing supplier codes: {summary.missing_supplier_codes}",
+        f"Ignored supplier rows: {summary.ignored_supplier_rows}",
+        f"Missing PLUs on till: {summary.missing_plus_on_till}",
+        f"Rows with changed cost: {summary.rows_with_changed_cost}",
+        f"Rows with changed EAN: {summary.rows_with_changed_ean}",
+    ]
+    if apply:
+        lines.extend(
+            [
+                f"API updates applied: {summary.applied_updates}",
+                f"API updates failed: {summary.failed_updates}",
+                f"API updates skipped (unchanged): {summary.skipped_unchanged}",
+            ],
+        )
+    return lines
+
+
+def _format_report_detail_sections(report: SupplierUpdateReport) -> list[str]:
+    sections: list[str] = []
+
+    if report.unmapped_rows:
+        sections.extend(
+            [
+                "",
+                "Unmapped supplier codes (add these to supplier_data.yaml and redeploy):",
+                *[f"  {row['supplier_code']} | {row['description']} | {row['size']}" for row in report.unmapped_rows],
+            ],
+        )
+
+    if report.ignored_rows:
+        sections.extend(
+            [
+                "",
+                "Ignored supplier rows:",
+                *[f"  {row['supplier_code']} | {comment}" for row, comment in report.ignored_rows],
+            ],
+        )
+
+    if report.missing_plu_rows:
+        sections.extend(
+            [
+                "",
+                "Missing PLUs on till:",
+                *[
+                    f"  Supplier {supplier_code} maps to missing PLU {plu}"
+                    for supplier_code, plu in report.missing_plu_rows
+                ],
+            ],
+        )
+
+    if report.failed_update_messages:
+        sections.extend(
+            [
+                "",
+                "Failed API updates:",
+                *[f"  {message}" for message in report.failed_update_messages],
+            ],
+        )
+
+    return sections
+
+
+def format_supplier_update_report(report: SupplierUpdateReport, *, apply: bool, include_details: bool = True) -> str:
+    sections: list[str] = []
+
+    if report.errors:
+        sections.append("Errors:")
+        sections.extend(f"  {error}" for error in report.errors)
+        sections.append("")
+
+    sections.extend(_format_report_summary_lines(report.summary, apply=apply))
+    sections.extend(_format_report_detail_sections(report))
+
+    if include_details and report.lines:
+        sections.extend(["", "Details:", *report.lines])
+
+    return "\n".join(sections)
+
+
+def print_supplier_update_summary(report: SupplierUpdateReport, apply: bool) -> None:
+    summary = report.summary
     click.echo(f"Parsed supplier rows: {summary.parsed_rows}")
     click.echo(f"Mapped output rows: {summary.mapped_rows}")
     click.echo(f"Missing supplier codes: {summary.missing_supplier_codes}")

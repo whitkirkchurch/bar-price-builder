@@ -1,5 +1,5 @@
 [project]
-requires-python = ">= 3.12"
+requires-python = ">=3.13,<3.14"
 name = "bar-price-builder"
 version = "0.1.0"
 description = ""
@@ -10,7 +10,7 @@ authors = ["Nick Jackson <nick@whitkirkchurch.org.uk>"]
 package-mode = false
 
 [tool.poetry.dependencies]
-python = "3.14.6"
+python = ">=3.13,<3.14"
 weasyprint = "69.0"
 click = "8.4.2"
 jinja2 = "3.1.6"
@@ -22,9 +22,11 @@ pillow = "11.3.0"
 [tool.poetry.group.dev.dependencies]
 json-schema-for-humans = "1.5.1"
 pytest = "9.1.1"
+boto3 = "1.42.54"
 
 [tool.ruff]
 line-length = 120
+target-version = "py313"
 
 [tool.ruff.lint]
 ignore = ["E501", "G004", "PLR2004", "RUF005", "RUF012", "UP040"] # long lines, fstrings in logs, magic values, consider not concat, mutable classbits, type instead of TypeAlias
