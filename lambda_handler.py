@@ -9,6 +9,8 @@ from supplier_email import (
     extract_supplier_confirmation_text,
     get_message_id,
     get_sender_address,
+    is_approved_sender,
+    parse_approved_sender_domains,
     parse_raw_email,
 )
 from supplier_updates import format_supplier_update_report, run_supplier_cost_updates
@@ -20,6 +22,14 @@ def _get_notification_from() -> str:
         msg = "NOTIFICATION_FROM environment variable is not set"
         raise ValueError(msg)
     return notification_from
+
+
+def _get_approved_sender_domains() -> frozenset[str]:
+    raw_domains = os.getenv("APPROVED_SENDER_DOMAINS")
+    if raw_domains is None or not raw_domains.strip():
+        msg = "APPROVED_SENDER_DOMAINS environment variable is not set"
+        raise ValueError(msg)
+    return parse_approved_sender_domains(raw_domains)
 
 
 def _load_raw_email_from_s3(bucket: str, key: str) -> bytes:
@@ -117,6 +127,7 @@ def handler(event: dict, _context) -> dict:
     ses_client = boto3.client("ses")
     sender: str | None = None
     in_reply_to: str | None = None
+    approved_domains: frozenset[str] | None = None
 
     try:
         bucket, key = _resolve_s3_location(event)
@@ -124,6 +135,19 @@ def handler(event: dict, _context) -> dict:
         message = parse_raw_email(raw_email)
         sender = get_sender_address(message)
         in_reply_to = get_message_id(message)
+
+        approved_domains = _get_approved_sender_domains()
+        if not is_approved_sender(sender, approved_domains):
+            return {
+                "statusCode": 200,
+                "body": json.dumps(
+                    {
+                        "reply_sent": False,
+                        "reason": "unapproved_sender",
+                        "sender": sender,
+                    },
+                ),
+            }
 
         confirmation_text = extract_supplier_confirmation_text(message)
         mapping_store = AirtableSupplierMappingStore.from_env()
@@ -138,7 +162,7 @@ def handler(event: dict, _context) -> dict:
     except Exception as exc:  # noqa: BLE001
         body = _failure_body(str(exc))
         subject = "Supplier cost update failed"
-        if sender is None:
+        if sender is None or approved_domains is None or not is_approved_sender(sender, approved_domains):
             return {
                 "statusCode": 500,
                 "body": json.dumps({"error": str(exc), "reply_sent": False}),

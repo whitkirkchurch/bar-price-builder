@@ -228,6 +228,7 @@ resource "aws_lambda_function" "supplier_email" {
       AIRTABLE_SUPPLIER_MAPPING_TABLE_ID = var.airtable_supplier_mapping_table_id
       NOTIFICATION_FROM                  = var.notification_from_address
       INBOUND_EMAIL_BUCKET               = aws_s3_bucket.inbound_email.bucket
+      APPROVED_SENDER_DOMAINS            = var.approved_sender_domains
     }
   }
 

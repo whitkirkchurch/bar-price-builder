@@ -34,6 +34,24 @@ def get_sender_address(message: Message) -> str:
     return address
 
 
+def parse_approved_sender_domains(raw_domains: str) -> frozenset[str]:
+    domains: set[str] = set()
+    for part in raw_domains.split(","):
+        domain = part.strip().lower().lstrip("@")
+        if domain:
+            domains.add(domain)
+    return frozenset(domains)
+
+
+def is_approved_sender(address: str, approved_domains: frozenset[str]) -> bool:
+    normalized = address.strip().lower()
+    if "@" not in normalized:
+        return False
+
+    domain = normalized.rsplit("@", 1)[1]
+    return domain in approved_domains
+
+
 def get_message_id(message: Message) -> str | None:
     message_id = message.get("Message-ID")
     if message_id is None:
