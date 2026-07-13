@@ -179,6 +179,22 @@ data "aws_iam_policy_document" "github_deploy" {
   }
 
   statement {
+    sid = "ProjectSNS"
+    actions = [
+      "sns:CreateTopic",
+      "sns:DeleteTopic",
+      "sns:Get*",
+      "sns:List*",
+      "sns:SetTopicAttributes",
+      "sns:Subscribe",
+      "sns:Unsubscribe",
+      "sns:TagResource",
+      "sns:UntagResource",
+    ]
+    resources = ["arn:aws:sns:*:${data.aws_caller_identity.current.account_id}:${var.project_name}-*"]
+  }
+
+  statement {
     sid = "ProjectIAM"
     actions = [
       "iam:CreateRole",

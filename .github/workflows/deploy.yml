@@ -78,6 +78,7 @@ jobs:
           TF_VAR_domain_name: ${{ vars.TF_VAR_DOMAIN_NAME }}
           TF_VAR_inbound_email_address: ${{ vars.TF_VAR_INBOUND_EMAIL_ADDRESS }}
           TF_VAR_notification_from_address: ${{ vars.TF_VAR_NOTIFICATION_FROM_ADDRESS }}
+          TF_VAR_ses_feedback_email: ${{ vars.TF_VAR_SES_FEEDBACK_EMAIL }}
           TF_VAR_loyverse_pat: ${{ secrets.TF_VAR_LOYVERSE_PAT }}
           TF_VAR_airtable_pat: ${{ secrets.TF_VAR_AIRTABLE_PAT }}
           TF_VAR_airtable_base_id: ${{ vars.TF_VAR_AIRTABLE_BASE_ID }}
@@ -91,6 +92,7 @@ jobs:
           TF_VAR_domain_name: ${{ vars.TF_VAR_DOMAIN_NAME }}
           TF_VAR_inbound_email_address: ${{ vars.TF_VAR_INBOUND_EMAIL_ADDRESS }}
           TF_VAR_notification_from_address: ${{ vars.TF_VAR_NOTIFICATION_FROM_ADDRESS }}
+          TF_VAR_ses_feedback_email: ${{ vars.TF_VAR_SES_FEEDBACK_EMAIL }}
           TF_VAR_loyverse_pat: ${{ secrets.TF_VAR_LOYVERSE_PAT }}
           TF_VAR_airtable_pat: ${{ secrets.TF_VAR_AIRTABLE_PAT }}
           TF_VAR_airtable_base_id: ${{ vars.TF_VAR_AIRTABLE_BASE_ID }}

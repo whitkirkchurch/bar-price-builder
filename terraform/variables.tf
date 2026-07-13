@@ -35,6 +35,11 @@ variable "notification_from_address" {
   }
 }
 
+variable "ses_feedback_email" {
+  description = "Email address that receives SES bounce and complaint notifications via SNS."
+  type        = string
+}
+
 variable "loyverse_pat" {
   description = "Loyverse personal access token for API updates."
   type        = string

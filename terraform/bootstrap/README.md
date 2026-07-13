@@ -136,6 +136,7 @@ Bootstrap also creates `bartender-github-actions-deploy` with a **separate** pol
 - Read/write Terraform state in the state bucket and lock table
 - Manage application resources prefixed with `bartender-` (S3, Lambda, IAM, CloudWatch Logs)
 - Full SES access (for inbound rules and sending replies)
+- SNS create/update/delete on `${project_name}-*` topics (SES bounce/complaint alerts)
 
 GitHub Actions uses this role via OIDC — it does **not** need the bootstrap permissions above.
 
