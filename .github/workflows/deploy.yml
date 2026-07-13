@@ -16,6 +16,7 @@ concurrency:
 permissions:
   id-token: write
   contents: read
+  pull-requests: read
 
 jobs:
   changes:
@@ -61,7 +62,17 @@ jobs:
         run: ./scripts/build_lambda.sh
 
       - name: Verify Lambda handler imports
-        run: python -c "import sys; sys.path.insert(0, 'build/lambda'); import lambda_handler"
+        run: |
+          python - <<'PY'
+          import sys
+          import types
+
+          boto3 = types.ModuleType("boto3")
+          boto3.client = lambda *args, **kwargs: None
+          sys.modules["boto3"] = boto3
+          sys.path.insert(0, "build/lambda")
+          import lambda_handler
+          PY
 
       - name: Run pre-commit
         uses: pre-commit/action@2c7b3805fd2a0fd8c1884dcaebf91fc102a13ecd # v3.0.1
