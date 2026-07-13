@@ -15,14 +15,12 @@ python3 -m pip install \
   --upgrade
 
 cp "${ROOT_DIR}/lambda_handler.py" "${BUILD_DIR}/"
+cp "${ROOT_DIR}/airtable_supplier_mapping.py" "${BUILD_DIR}/"
 cp "${ROOT_DIR}/supplier_data.py" "${BUILD_DIR}/"
 cp "${ROOT_DIR}/supplier_updates.py" "${BUILD_DIR}/"
 cp "${ROOT_DIR}/supplier_email.py" "${BUILD_DIR}/"
 cp "${ROOT_DIR}/loyverse.py" "${BUILD_DIR}/"
 cp "${ROOT_DIR}/config.py" "${BUILD_DIR}/"
-
-mkdir -p "${BUILD_DIR}/data"
-cp "${ROOT_DIR}/data/supplier_data.yaml" "${BUILD_DIR}/data/"
 
 (
   cd "${BUILD_DIR}"

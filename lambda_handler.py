@@ -1,10 +1,10 @@
 import json
 import os
-from pathlib import Path
 from urllib.parse import unquote_plus
 
 import boto3
 
+from airtable_supplier_mapping import AirtableSupplierMappingStore
 from supplier_email import (
     extract_supplier_confirmation_text,
     get_message_id,
@@ -12,8 +12,6 @@ from supplier_email import (
     parse_raw_email,
 )
 from supplier_updates import format_supplier_update_report, run_supplier_cost_updates
-
-MAPPING_FILE = Path(__file__).resolve().parent / "data" / "supplier_data.yaml"
 
 
 def _get_notification_from() -> str:
@@ -128,11 +126,12 @@ def handler(event: dict, _context) -> dict:
         in_reply_to = get_message_id(message)
 
         confirmation_text = extract_supplier_confirmation_text(message)
+        mapping_store = AirtableSupplierMappingStore.from_env()
         report = run_supplier_cost_updates(
             confirmation_text=confirmation_text,
-            mapping_file=MAPPING_FILE,
+            mapping_store=mapping_store,
             apply=True,
-            write_mapping=False,
+            write_mapping=True,
         )
         body = format_supplier_update_report(report, apply=True)
         subject = "Supplier cost update results"

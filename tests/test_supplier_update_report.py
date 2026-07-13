@@ -1,12 +1,9 @@
 """Tests for supplier update report formatting and mapping behaviour."""
 
-import tempfile
-from pathlib import Path
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import pytest
 
-from supplier_data import get_supplier_code_entries
 from supplier_updates import (
     SupplierUpdateReport,
     SupplierUpdateSummary,
@@ -21,18 +18,18 @@ Quantity Code        Description      Size Pack Price   EAN code
 """
 
 
-MAPPING_YAML = """---
-items:
-  - supplier_code: 10001
-    mapping:
-      plu: 1001
-      servings_per_unit: 1
-    comment: Vodka
-"""
-
-
-def _write_mapping_file(path: Path) -> None:
-    path.write_text(MAPPING_YAML)
+def _mapping_store() -> MagicMock:
+    store = MagicMock()
+    store.get_entries.return_value = {
+        10001: {
+            "mapping": {"plu": 1001, "servings_per_unit": 1},
+            "ignore": False,
+            "comment": "Vodka",
+        },
+    }
+    store.update_labels.return_value = 0
+    store.seed_missing_codes.return_value = []
+    return store
 
 
 def test_format_supplier_update_report_includes_unmapped_codes() -> None:
@@ -64,9 +61,52 @@ def test_format_supplier_update_report_includes_unmapped_codes() -> None:
 
     body = format_supplier_update_report(report, apply=True)
 
-    assert "Unmapped supplier codes" in body
+    assert "Unmapped supplier codes (add PLU mapping in Airtable)" in body
     assert "19999 | Mystery Spirit | 1L" in body
     assert "Missing supplier codes: 1" in body
+
+
+def test_format_supplier_update_report_includes_newly_seeded_products() -> None:
+    report = SupplierUpdateReport(
+        summary=SupplierUpdateSummary(
+            parsed_rows=1,
+            mapped_rows=0,
+            missing_supplier_codes=1,
+            ignored_supplier_rows=0,
+            missing_plus_on_till=0,
+            rows_with_changed_cost=0,
+            rows_with_changed_ean=0,
+            applied_updates=0,
+            failed_updates=0,
+            skipped_unchanged=0,
+        ),
+        newly_seeded_rows=[
+            {
+                "supplier_code": 19999,
+                "description": "Mystery Spirit",
+                "size": "1L",
+                "pack": 6,
+                "price_pence": 2000,
+                "ean": "9999999999999",
+            },
+        ],
+        unmapped_rows=[
+            {
+                "supplier_code": 19999,
+                "description": "Mystery Spirit",
+                "size": "1L",
+                "pack": 6,
+                "price_pence": 2000,
+                "ean": "9999999999999",
+            },
+        ],
+    )
+
+    body = format_supplier_update_report(report, apply=True)
+
+    assert "New supplier products seeded in Airtable (add PLU mapping)" in body
+    assert "19999 | Mystery Spirit | 1L" in body
+    assert "Unmapped supplier codes" not in body
 
 
 def test_format_supplier_update_report_includes_errors() -> None:
@@ -94,27 +134,24 @@ def test_format_supplier_update_report_includes_errors() -> None:
 
 @patch("supplier_updates.get_loyverse_items")
 @patch("supplier_updates.build_till_products")
-def test_write_mapping_false_skips_yaml_mutation(
+def test_write_mapping_false_skips_airtable_writes(
     mock_build_till_products,
     mock_get_loyverse_items,
 ) -> None:
     mock_get_loyverse_items.return_value = []
     mock_build_till_products.return_value = {}
+    store = _mapping_store()
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        mapping_file = Path(temp_dir) / "supplier_data.yaml"
-        _write_mapping_file(mapping_file)
-        original_text = mapping_file.read_text()
+    with pytest.raises(ValueError, match="No order rows were parsed"):
+        run_supplier_cost_updates(
+            confirmation_text="Quantity Code Description Size Pack Price EAN code\n",
+            mapping_store=store,
+            apply=False,
+            write_mapping=False,
+        )
 
-        with pytest.raises(ValueError, match="No order rows were parsed"):
-            run_supplier_cost_updates(
-                confirmation_text="Quantity Code Description Size Pack Price EAN code\n",
-                mapping_file=mapping_file,
-                apply=False,
-                write_mapping=False,
-            )
-
-        assert mapping_file.read_text() == original_text
+    store.update_labels.assert_not_called()
+    store.seed_missing_codes.assert_not_called()
 
 
 @patch("supplier_updates.get_loyverse_items")
@@ -125,17 +162,14 @@ def test_run_supplier_cost_updates_collects_unmapped_rows(
 ) -> None:
     mock_get_loyverse_items.return_value = []
     mock_build_till_products.return_value = {}
+    store = _mapping_store()
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        mapping_file = Path(temp_dir) / "supplier_data.yaml"
-        _write_mapping_file(mapping_file)
-
-        report = run_supplier_cost_updates(
-            confirmation_text=CONFIRMATION_TEXT,
-            mapping_file=mapping_file,
-            apply=False,
-            write_mapping=False,
-        )
+    report = run_supplier_cost_updates(
+        confirmation_text=CONFIRMATION_TEXT,
+        mapping_store=store,
+        apply=False,
+        write_mapping=False,
+    )
 
     assert report.summary.parsed_rows == 2
     assert report.summary.missing_supplier_codes == 1
@@ -143,32 +177,34 @@ def test_run_supplier_cost_updates_collects_unmapped_rows(
     assert report.unmapped_rows[0]["supplier_code"] == 19999
 
 
-@patch("supplier_updates.seed_missing_supplier_codes")
-@patch("supplier_updates.update_supplier_data_comments")
 @patch("supplier_updates.get_loyverse_items")
 @patch("supplier_updates.build_till_products")
-def test_write_mapping_true_updates_yaml(
+def test_write_mapping_true_updates_airtable(
     mock_build_till_products,
     mock_get_loyverse_items,
-    mock_update_comments,
-    mock_seed_codes,
 ) -> None:
     mock_get_loyverse_items.return_value = []
     mock_build_till_products.return_value = {}
-    mock_seed_codes.return_value = 0
+    store = _mapping_store()
+    store.seed_missing_codes.return_value = [
+        {
+            "supplier_code": 19999,
+            "description": "Mystery Spirit",
+            "size": "1L",
+            "pack": 6,
+            "price_pence": 2000,
+            "ean": "9999999999999",
+        },
+    ]
 
-    with tempfile.TemporaryDirectory() as temp_dir:
-        mapping_file = Path(temp_dir) / "supplier_data.yaml"
-        _write_mapping_file(mapping_file)
+    report = run_supplier_cost_updates(
+        confirmation_text=CONFIRMATION_TEXT,
+        mapping_store=store,
+        apply=False,
+        write_mapping=True,
+    )
 
-        run_supplier_cost_updates(
-            confirmation_text=CONFIRMATION_TEXT,
-            mapping_file=mapping_file,
-            apply=False,
-            write_mapping=True,
-        )
-
-        mock_update_comments.assert_called_once()
-        mock_seed_codes.assert_called_once()
-        entries = get_supplier_code_entries(mapping_file)
-        assert 10001 in entries
+    store.update_labels.assert_called_once()
+    store.seed_missing_codes.assert_called_once()
+    assert len(report.newly_seeded_rows) == 1
+    assert report.newly_seeded_rows[0]["supplier_code"] == 19999

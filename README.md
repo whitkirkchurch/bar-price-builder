@@ -75,7 +75,8 @@ This command also generates `outputs/prices.csv` with one row per listed item an
 When you have a supplier order confirmation text file, you can calculate per-unit costs and optionally write costs to Loyverse.
 
 1. Save the confirmation text to a local file, for example `data/supplier_confirmation.txt`
-1. Update `data/supplier_data.yaml` to map each supplier code to exactly one PLU using `mapping.plu` and `mapping.servings_per_unit`
+1. Map each supplier code to exactly one PLU in the Airtable **Products** base, **Supplier mapping** table (`PLU` and `Servings per Unit` columns)
+1. Set `AIRTABLE_PAT` and `AIRTABLE_BASE_ID` in your environment
 1. Run a dry run first:
 
 ```
@@ -93,7 +94,7 @@ The command now prints one line per mapped product showing:
 
 New costs are rounded to 2 decimal places (pounds) before comparison and API writes, matching Loyverse cost precision.
 
-If a supplier code should be intentionally skipped (for example bulk ingredients that are costed elsewhere), set `ignore: true` on that entry in `data/supplier_data.yaml`.
+If a supplier code should be intentionally skipped (for example bulk ingredients that are costed elsewhere), set **Ignore** on that row in Airtable.
 
 Ignored entries are reported in command output as:
 
@@ -111,15 +112,16 @@ When `--apply` is used, API writes are only sent for rows where the cost has act
 
 EAN updates are also written when changed, but only for mappings where `servings_per_unit` is exactly `1`.
 
-You must have `LOYVERSE_PAT` set in your environment for API access.
+You must have `LOYVERSE_PAT`, `AIRTABLE_PAT`, and `AIRTABLE_BASE_ID` set in your environment for API access.
 
 #### Processing forwarded supplier emails (AWS Lambda)
 
 You can also forward supplier confirmation emails to a dedicated inbound address. SES stores the raw message in S3 and invokes a Lambda that:
 
 1. Extracts the confirmation table from the email body or `.txt` attachment
-2. Applies Loyverse cost/EAN updates (`--apply` behaviour)
-3. Replies to the sender with a plain-text report, including any unmapped supplier codes
+2. Seeds any new supplier codes and product labels in Airtable
+3. Applies Loyverse cost/EAN updates (`--apply` behaviour)
+4. Replies to the sender with a plain-text report, including any unmapped supplier codes and newly seeded products
 
 For local debugging without deploying, use:
 

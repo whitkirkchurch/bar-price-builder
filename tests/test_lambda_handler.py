@@ -17,6 +17,8 @@ def ses_env(monkeypatch: pytest.MonkeyPatch) -> None:
     monkeypatch.setenv("NOTIFICATION_FROM", "supplier-updates@example.org.uk")
     monkeypatch.setenv("INBOUND_EMAIL_BUCKET", "test-inbound-bucket")
     monkeypatch.setenv("LOYVERSE_PAT", "test-token")
+    monkeypatch.setenv("AIRTABLE_PAT", "test-airtable-token")
+    monkeypatch.setenv("AIRTABLE_BASE_ID", "appTEST")
 
 
 def _s3_event(key: str = "message-id-123") -> dict:
@@ -49,6 +51,7 @@ def test_handler_sends_success_reply(ses_env) -> None:
         patch("lambda_handler._load_raw_email_from_s3", return_value=raw_email),
         patch("lambda_handler.parse_raw_email", return_value=mock_message),
         patch("lambda_handler.extract_supplier_confirmation_text", return_value="confirmation text"),
+        patch("lambda_handler.AirtableSupplierMappingStore.from_env", return_value=MagicMock()),
         patch("lambda_handler.run_supplier_cost_updates", return_value=mock_report),
         patch("lambda_handler.boto3.client", return_value=ses_client),
         patch("lambda_handler.get_sender_address", return_value="jane.doe@example.com"),
@@ -123,6 +126,7 @@ def test_handler_reports_loyverse_failure(ses_env) -> None:
         patch("lambda_handler._load_raw_email_from_s3", return_value=raw_email),
         patch("lambda_handler.parse_raw_email", return_value=MagicMock()),
         patch("lambda_handler.extract_supplier_confirmation_text", return_value="confirmation text"),
+        patch("lambda_handler.AirtableSupplierMappingStore.from_env", return_value=MagicMock()),
         patch(
             "lambda_handler.run_supplier_cost_updates",
             side_effect=ValueError("LOYVERSE_PAT environment variable is not set"),

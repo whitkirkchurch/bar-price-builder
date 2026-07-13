@@ -138,6 +138,8 @@ resource "aws_lambda_function" "supplier_email" {
   environment {
     variables = {
       LOYVERSE_PAT         = var.loyverse_pat
+      AIRTABLE_PAT         = var.airtable_pat
+      AIRTABLE_BASE_ID     = var.airtable_base_id
       NOTIFICATION_FROM    = var.notification_from_address
       INBOUND_EMAIL_BUCKET = aws_s3_bucket.inbound_email.bucket
     }

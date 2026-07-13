@@ -3,6 +3,7 @@ from pathlib import Path
 import click
 import requests
 
+from airtable_supplier_mapping import AirtableSupplierMappingStore
 from config import DATA_DIR
 from loyverse import fetch_till_products
 from price_check import (
@@ -68,27 +69,19 @@ def build():
 @cli.command("update-costs-from-supplier")
 @click.argument("supplier_confirmation_file", type=click.Path(exists=True, path_type=Path))
 @click.option(
-    "--mapping-file",
-    type=click.Path(exists=True, path_type=Path),
-    default=DATA_DIR / "supplier_data.yaml",
-    show_default=True,
-    help="YAML file mapping each supplier code to a single PLU and servings_per_unit.",
-)
-@click.option(
     "--apply",
     is_flag=True,
     help="Apply updates to Loyverse API. Without this flag, command runs as dry-run.",
 )
 def update_costs_from_supplier(
     supplier_confirmation_file: Path,
-    mapping_file: Path,
     apply: bool,
 ) -> None:
     click.echo("Reading supplier confirmation…")
     try:
         report = run_supplier_cost_updates(
             confirmation_text=supplier_confirmation_file.read_text(),
-            mapping_file=mapping_file,
+            mapping_store=AirtableSupplierMappingStore.from_env(),
             apply=apply,
         )
     except ValueError as exc:
@@ -104,13 +97,6 @@ def update_costs_from_supplier(
 @cli.command("parse-supplier-email")
 @click.argument("email_file", type=click.Path(exists=True, path_type=Path))
 @click.option(
-    "--mapping-file",
-    type=click.Path(exists=True, path_type=Path),
-    default=DATA_DIR / "supplier_data.yaml",
-    show_default=True,
-    help="YAML file mapping each supplier code to a single PLU and servings_per_unit.",
-)
-@click.option(
     "--apply",
     is_flag=True,
     help="Apply updates to Loyverse API. Without this flag, command runs as dry-run.",
@@ -122,7 +108,6 @@ def update_costs_from_supplier(
 )
 def parse_supplier_email(
     email_file: Path,
-    mapping_file: Path,
     apply: bool,
     extract_only: bool,
 ) -> None:
@@ -141,7 +126,7 @@ def parse_supplier_email(
     try:
         report = run_supplier_cost_updates(
             confirmation_text=confirmation_text,
-            mapping_file=mapping_file,
+            mapping_store=AirtableSupplierMappingStore.from_env(),
             apply=apply,
         )
     except ValueError as exc:

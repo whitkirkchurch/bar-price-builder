@@ -11,14 +11,11 @@ from supplier_data import (
     SupplierRow,
     get_active_mapping_by_code,
     get_duplicate_plu_mapping_warnings,
-    get_supplier_code_entries,
     parse_supplier_confirmation_rows,
-    seed_missing_supplier_codes,
-    update_supplier_data_comments,
 )
 
 if TYPE_CHECKING:
-    from pathlib import Path
+    from airtable_supplier_mapping import AirtableSupplierMappingStore
 
 
 @dataclass
@@ -41,6 +38,7 @@ class SupplierUpdateReport:
     lines: list[str] = field(default_factory=list)
     errors: list[str] = field(default_factory=list)
     unmapped_rows: list[SupplierRow] = field(default_factory=list)
+    newly_seeded_rows: list[SupplierRow] = field(default_factory=list)
     ignored_rows: list[tuple[SupplierRow, str]] = field(default_factory=list)
     missing_plu_rows: list[tuple[int, int]] = field(default_factory=list)
     failed_update_messages: list[str] = field(default_factory=list)
@@ -342,7 +340,7 @@ def _empty_summary() -> SupplierUpdateSummary:
 
 def run_supplier_cost_updates(
     confirmation_text: str,
-    mapping_file: Path,
+    mapping_store: AirtableSupplierMappingStore,
     apply: bool,
     *,
     write_mapping: bool = True,
@@ -356,14 +354,21 @@ def run_supplier_cost_updates(
         raise ValueError(msg)
 
     if write_mapping:
-        update_supplier_data_comments(mapping_file, rows)
-        seeded_codes = seed_missing_supplier_codes(mapping_file, rows)
-        if seeded_codes > 0:
+        updated_labels = mapping_store.update_labels(rows)
+        if updated_labels > 0:
             report.lines.append(
-                f"Added {seeded_codes} new supplier code entr{'y' if seeded_codes == 1 else 'ies'} to {mapping_file}",
+                f"Updated {updated_labels} supplier product label{'s' if updated_labels != 1 else ''} in Airtable",
+            )
+        newly_seeded_rows = mapping_store.seed_missing_codes(rows)
+        if newly_seeded_rows:
+            report.newly_seeded_rows.extend(newly_seeded_rows)
+            report.lines.append(
+                "Added "
+                f"{len(newly_seeded_rows)} new supplier product entr"
+                f"{'y' if len(newly_seeded_rows) == 1 else 'ies'} to Airtable",
             )
 
-    entries_by_code = get_supplier_code_entries(mapping_file)
+    entries_by_code = mapping_store.get_entries()
     mappings_by_code = get_active_mapping_by_code(entries_by_code)
     for warning in get_duplicate_plu_mapping_warnings(mappings_by_code):
         report.lines.append(warning)
@@ -446,12 +451,29 @@ def _format_report_summary_lines(summary: SupplierUpdateSummary, *, apply: bool)
 def _format_report_detail_sections(report: SupplierUpdateReport) -> list[str]:
     sections: list[str] = []
 
-    if report.unmapped_rows:
+    if report.newly_seeded_rows:
         sections.extend(
             [
                 "",
-                "Unmapped supplier codes (add these to supplier_data.yaml and redeploy):",
-                *[f"  {row['supplier_code']} | {row['description']} | {row['size']}" for row in report.unmapped_rows],
+                "New supplier products seeded in Airtable (add PLU mapping):",
+                *[
+                    f"  {row['supplier_code']} | {row['description']} | {row['size']}"
+                    for row in report.newly_seeded_rows
+                ],
+            ],
+        )
+
+    existing_unmapped_rows = [
+        row
+        for row in report.unmapped_rows
+        if row["supplier_code"] not in {seeded_row["supplier_code"] for seeded_row in report.newly_seeded_rows}
+    ]
+    if existing_unmapped_rows:
+        sections.extend(
+            [
+                "",
+                "Unmapped supplier codes (add PLU mapping in Airtable):",
+                *[f"  {row['supplier_code']} | {row['description']} | {row['size']}" for row in existing_unmapped_rows],
             ],
         )
 

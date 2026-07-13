@@ -43,18 +43,20 @@ In the repository: **Settings → Secrets and variables → Actions**.
 | `TF_VAR_INBOUND_EMAIL_ADDRESS`     | e.g. `supplier-updates@whitkirk.com`                      |
 | `TF_VAR_NOTIFICATION_FROM_ADDRESS` | e.g. `supplier-updates@whitkirk.com`                      |
 | `TF_VAR_PROJECT_NAME`              | Must match bootstrap `project_name` (default `bartender`) |
+| `TF_VAR_AIRTABLE_BASE_ID`          | Airtable Products base ID (e.g. `appXXXXXXXXXXXXXX`)      |
 
 **Secrets:**
 
-| Name                  | Notes              |
-| --------------------- | ------------------ |
-| `TF_VAR_LOYVERSE_PAT` | Loyverse API token |
+| Name                  | Notes                                                                      |
+| --------------------- | -------------------------------------------------------------------------- |
+| `TF_VAR_LOYVERSE_PAT` | Loyverse API token                                                         |
+| `TF_VAR_AIRTABLE_PAT` | Airtable personal access token with read/write access to the Products base |
 
 No `AWS_ACCESS_KEY_ID` or `AWS_SECRET_ACCESS_KEY` secrets are required.
 
 ## Deploy the application
 
-Push to `main` (with changes under `terraform/`, Lambda source, or `supplier_data.yaml`), or run the **Deploy** workflow manually from the Actions tab.
+Push to `main` (with changes under `terraform/`, Lambda source, or supplier mapping code), or run the **Deploy** workflow manually from the Actions tab.
 
 The workflow:
 
