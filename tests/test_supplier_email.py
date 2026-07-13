@@ -13,6 +13,7 @@ from supplier_email import (
 )
 
 HB_CLARK_EMAIL = Path(__file__).parent / "fixtures" / "emails" / "hb_clark_sales_order_ack.eml"
+HB_CLARK_FORWARDED_EMAIL = Path(__file__).parent / "fixtures" / "emails" / "hb_clark_sales_order_ack_forwarded.eml"
 
 
 def test_extract_supplier_confirmation_text_from_hb_clark_email() -> None:
@@ -31,6 +32,25 @@ def test_extract_supplier_confirmation_text_from_hb_clark_email() -> None:
     assert 10045 in supplier_codes
     assert 24878 in supplier_codes
     assert 12188 in supplier_codes
+
+
+def test_extract_supplier_confirmation_text_from_forwarded_hb_clark_email() -> None:
+    raw = HB_CLARK_FORWARDED_EMAIL.read_bytes()
+    message = parse_raw_email(raw)
+
+    text = extract_supplier_confirmation_text(message)
+    rows = parse_supplier_confirmation_rows(text)
+
+    assert get_sender_address(message) == "nick@whitkirkchurch.org.uk"
+    assert get_message_id(message) == "<a38772d2-8013-4066-b8a2-10ff467671c8n@whitkirk.com>"
+    assert "Quantity" in text
+    assert "EAN code" in text
+    assert len(rows) == 13
+    supplier_codes = {row["supplier_code"] for row in rows}
+    assert 24879 in supplier_codes
+    assert 23824 in supplier_codes
+    assert 12005 in supplier_codes
+    assert 22195 in supplier_codes
 
 
 def test_get_sender_address_prefers_reply_to() -> None:
