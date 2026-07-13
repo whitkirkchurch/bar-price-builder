@@ -133,7 +133,6 @@ def handler(event: dict, _context) -> dict:
             mapping_file=MAPPING_FILE,
             apply=True,
             write_mapping=False,
-            log_to_console=False,
         )
         body = format_supplier_update_report(report, apply=True)
         subject = "Supplier cost update results"

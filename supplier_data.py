@@ -2,7 +2,6 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING, Any, TypedDict
 
-import click
 from ruamel.yaml import YAML
 from ruamel.yaml.comments import CommentedMap
 
@@ -390,8 +389,3 @@ def get_duplicate_plu_mapping_warnings(mappings_by_code: dict[int, SupplierCodeP
         warnings.append(f"DUPLICATE MAPPING: PLU {plu} is mapped to multiple supplier codes: {codes}")
 
     return warnings
-
-
-def warn_for_duplicate_plu_mappings(mappings_by_code: dict[int, SupplierCodePluMapping]) -> None:
-    for warning in get_duplicate_plu_mapping_warnings(mappings_by_code):
-        click.echo(click.style(warning, fg="yellow"))
