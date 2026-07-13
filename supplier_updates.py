@@ -4,8 +4,6 @@ from dataclasses import dataclass, field
 from decimal import ROUND_HALF_UP, Decimal
 from typing import TYPE_CHECKING
 
-import click
-
 from loyverse import TillProduct, build_till_products, get_loyverse_items, update_loyverse_cost
 from supplier_data import (
     SupplierCodeMapEntry,
@@ -93,7 +91,6 @@ class ProcessingContext:
     items_by_id: dict[str, dict]
     apply: bool
     report: SupplierUpdateReport
-    log_to_console: bool
 
 
 def round_loyverse_cost_pounds(value: float) -> float:
@@ -120,18 +117,8 @@ def has_ean_changed(current_ean: str | None, new_ean: str | None) -> bool:
 
 
 def _emit(context: ProcessingContext, line: str, *, style: str | None = None) -> None:
+    del style
     context.report.lines.append(line)
-    if not context.log_to_console:
-        return
-
-    if style == "green":
-        click.echo(click.style(line, fg="green"))
-    elif style == "cyan":
-        click.echo(click.style(line, fg="cyan"))
-    elif style == "yellow":
-        click.echo(click.style(line, fg="yellow"))
-    else:
-        click.echo(line)
 
 
 def _calculate_row_costs(row: SupplierRow, mapping: SupplierCodePluMapping) -> tuple[float, float, float]:
@@ -359,12 +346,8 @@ def run_supplier_cost_updates(
     apply: bool,
     *,
     write_mapping: bool = True,
-    log_to_console: bool = True,
 ) -> SupplierUpdateReport:
     report = SupplierUpdateReport(summary=_empty_summary())
-
-    if log_to_console:
-        click.echo("Reading supplier confirmation…")
 
     rows = parse_supplier_confirmation_rows(confirmation_text)
     if not rows:
@@ -375,23 +358,16 @@ def run_supplier_cost_updates(
     if write_mapping:
         update_supplier_data_comments(mapping_file, rows)
         seeded_codes = seed_missing_supplier_codes(mapping_file, rows)
-        if seeded_codes > 0 and log_to_console:
-            click.echo(
-                click.style(
-                    f"Added {seeded_codes} new supplier code entr{'y' if seeded_codes == 1 else 'ies'} to {mapping_file}",
-                    fg="green",
-                ),
+        if seeded_codes > 0:
+            report.lines.append(
+                f"Added {seeded_codes} new supplier code entr{'y' if seeded_codes == 1 else 'ies'} to {mapping_file}",
             )
 
     entries_by_code = get_supplier_code_entries(mapping_file)
     mappings_by_code = get_active_mapping_by_code(entries_by_code)
     for warning in get_duplicate_plu_mapping_warnings(mappings_by_code):
-        if log_to_console:
-            click.echo(click.style(warning, fg="yellow"))
         report.lines.append(warning)
 
-    if log_to_console:
-        click.echo("Fetching products from Loyverse…")
     items = get_loyverse_items()
     till_products = build_till_products(items)
     items_by_id = {str(item.get("id", "")): item for item in items}
@@ -403,7 +379,6 @@ def run_supplier_cost_updates(
         items_by_id=items_by_id,
         apply=apply,
         report=report,
-        log_to_console=log_to_console,
     )
 
     mapped_rows = 0
@@ -528,18 +503,3 @@ def format_supplier_update_report(report: SupplierUpdateReport, *, apply: bool, 
         sections.extend(["", "Details:", *report.lines])
 
     return "\n".join(sections)
-
-
-def print_supplier_update_summary(report: SupplierUpdateReport, apply: bool) -> None:
-    summary = report.summary
-    click.echo(f"Parsed supplier rows: {summary.parsed_rows}")
-    click.echo(f"Mapped output rows: {summary.mapped_rows}")
-    click.echo(f"Missing supplier codes: {summary.missing_supplier_codes}")
-    click.echo(f"Ignored supplier rows: {summary.ignored_supplier_rows}")
-    click.echo(f"Missing PLUs on till: {summary.missing_plus_on_till}")
-    click.echo(f"Rows with changed cost: {summary.rows_with_changed_cost}")
-    click.echo(f"Rows with changed EAN: {summary.rows_with_changed_ean}")
-    if apply:
-        click.echo(f"API updates applied: {summary.applied_updates}")
-        click.echo(f"API updates failed: {summary.failed_updates}")
-        click.echo(f"API updates skipped (unchanged): {summary.skipped_unchanged}")

@@ -112,7 +112,6 @@ def test_write_mapping_false_skips_yaml_mutation(
                 mapping_file=mapping_file,
                 apply=False,
                 write_mapping=False,
-                log_to_console=False,
             )
 
         assert mapping_file.read_text() == original_text
@@ -136,7 +135,6 @@ def test_run_supplier_cost_updates_collects_unmapped_rows(
             mapping_file=mapping_file,
             apply=False,
             write_mapping=False,
-            log_to_console=False,
         )
 
     assert report.summary.parsed_rows == 2
@@ -168,7 +166,6 @@ def test_write_mapping_true_updates_yaml(
             mapping_file=mapping_file,
             apply=False,
             write_mapping=True,
-            log_to_console=False,
         )
 
         mock_update_comments.assert_called_once()

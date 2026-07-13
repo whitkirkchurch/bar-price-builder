@@ -14,7 +14,22 @@ from price_list import get_all_plus_in_price_list
 from product_images import print_product_image_summary, run_product_image_sync
 from rendering import build_price_list_pdfs
 from supplier_email import extract_supplier_confirmation_text, parse_raw_email
-from supplier_updates import print_supplier_update_summary, run_supplier_cost_updates
+from supplier_updates import SupplierUpdateReport, run_supplier_cost_updates
+
+
+def _print_supplier_update_summary(report: SupplierUpdateReport, apply: bool) -> None:
+    summary = report.summary
+    click.echo(f"Parsed supplier rows: {summary.parsed_rows}")
+    click.echo(f"Mapped output rows: {summary.mapped_rows}")
+    click.echo(f"Missing supplier codes: {summary.missing_supplier_codes}")
+    click.echo(f"Ignored supplier rows: {summary.ignored_supplier_rows}")
+    click.echo(f"Missing PLUs on till: {summary.missing_plus_on_till}")
+    click.echo(f"Rows with changed cost: {summary.rows_with_changed_cost}")
+    click.echo(f"Rows with changed EAN: {summary.rows_with_changed_ean}")
+    if apply:
+        click.echo(f"API updates applied: {summary.applied_updates}")
+        click.echo(f"API updates failed: {summary.failed_updates}")
+        click.echo(f"API updates skipped (unchanged): {summary.skipped_unchanged}")
 
 
 @click.group()
@@ -69,6 +84,7 @@ def update_costs_from_supplier(
     mapping_file: Path,
     apply: bool,
 ) -> None:
+    click.echo("Reading supplier confirmation…")
     try:
         report = run_supplier_cost_updates(
             confirmation_text=supplier_confirmation_file.read_text(),
@@ -82,7 +98,7 @@ def update_costs_from_supplier(
         click.echo(click.style(f"API Error: {exc}", fg="red"), err=True)
         return
 
-    print_supplier_update_summary(report, apply)
+    _print_supplier_update_summary(report, apply)
 
 
 @cli.command("parse-supplier-email")
@@ -121,6 +137,7 @@ def parse_supplier_email(
         click.echo(confirmation_text)
         return
 
+    click.echo("Reading supplier confirmation…")
     try:
         report = run_supplier_cost_updates(
             confirmation_text=confirmation_text,
@@ -134,7 +151,7 @@ def parse_supplier_email(
         click.echo(click.style(f"API Error: {exc}", fg="red"), err=True)
         return
 
-    print_supplier_update_summary(report, apply)
+    _print_supplier_update_summary(report, apply)
 
 
 @cli.command("build-product-images")
