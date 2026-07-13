@@ -1,14 +1,12 @@
 """Unit tests for supplier_data.py parsing and mapping logic."""
 
-import tempfile
-from pathlib import Path
-
 import pytest
 
 from supplier_data import (
     SupplierCodeMapEntry,
+    SupplierCodePluMapping,
     get_active_mapping_by_code,
-    get_supplier_code_entries,
+    get_duplicate_plu_mapping_warnings,
     parse_supplier_confirmation_rows,
 )
 
@@ -95,90 +93,7 @@ class TestSupplierDataParsing:
 
 
 class TestSupplierCodeMapping:
-    """Tests for get_supplier_code_entries and related functions."""
-
-    def test_get_supplier_code_entries_loads_valid_yaml(self) -> None:
-        yaml_content = """items:
-  - supplier_code: 10001
-    mapping:
-      plu: 1001
-      servings_per_unit: 1
-    comment: "Vodka supplier"
-  - supplier_code: 10002
-    mapping:
-      plu: 1002
-      servings_per_unit: 2
-    ignore: false
-"""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-            f.write(yaml_content)
-            temp_path = Path(f.name)
-
-        try:
-            entries = get_supplier_code_entries(temp_path)
-            assert len(entries) == 2
-            assert entries[10001]["mapping"] is not None
-            assert entries[10001]["mapping"]["plu"] == 1001
-            assert entries[10001]["mapping"]["servings_per_unit"] == 1
-            assert entries[10001]["comment"] == "Vodka supplier"
-            assert entries[10002]["ignore"] is False
-        finally:
-            temp_path.unlink()
-
-    def test_get_supplier_code_entries_rejects_invalid_servings_per_unit(self) -> None:
-        yaml_content = """items:
-  - supplier_code: 10001
-    mapping:
-      plu: 1001
-      servings_per_unit: 0
-"""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-            f.write(yaml_content)
-            temp_path = Path(f.name)
-
-        try:
-            with pytest.raises(ValueError, match="servings_per_unit must be > 0"):
-                get_supplier_code_entries(temp_path)
-        finally:
-            temp_path.unlink()
-
-    def test_get_supplier_code_entries_requires_complete_mapping_fields(self) -> None:
-        yaml_content = """items:
-  - supplier_code: 10001
-    mapping:
-      plu: 1001
-"""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-            f.write(yaml_content)
-            temp_path = Path(f.name)
-
-        try:
-            with pytest.raises(ValueError, match="mapping must include plu and servings_per_unit"):
-                get_supplier_code_entries(temp_path)
-        finally:
-            temp_path.unlink()
-
-    def test_get_supplier_code_entries_handles_ignored_entries(self) -> None:
-        yaml_content = """items:
-  - supplier_code: 10001
-    ignore: true
-    comment: "Deprecated supplier"
-  - supplier_code: 10002
-    mapping:
-      plu: 1002
-      servings_per_unit: 1
-"""
-        with tempfile.NamedTemporaryFile(mode="w", suffix=".yaml", delete=False) as f:
-            f.write(yaml_content)
-            temp_path = Path(f.name)
-
-        try:
-            entries = get_supplier_code_entries(temp_path)
-            assert entries[10001]["ignore"] is True
-            assert entries[10001]["mapping"] is None
-            assert entries[10002]["ignore"] is False
-        finally:
-            temp_path.unlink()
+    """Tests for mapping helper functions."""
 
     def test_get_active_mapping_by_code_filters_ignored(self) -> None:
         entries: dict[int, SupplierCodeMapEntry] = {
@@ -191,3 +106,17 @@ class TestSupplierCodeMapping:
         assert 10001 in active
         assert 10002 not in active
         assert 10003 not in active
+
+    def test_get_duplicate_plu_mapping_warnings_reports_duplicates(self) -> None:
+        mappings: dict[int, SupplierCodePluMapping] = {
+            10001: {"plu": 1001, "servings_per_unit": 1.0},
+            10002: {"plu": 1001, "servings_per_unit": 2.0},
+            10003: {"plu": 1003, "servings_per_unit": 1.0},
+        }
+
+        warnings = get_duplicate_plu_mapping_warnings(mappings)
+
+        assert len(warnings) == 1
+        assert "PLU 1001" in warnings[0]
+        assert "10001" in warnings[0]
+        assert "10002" in warnings[0]

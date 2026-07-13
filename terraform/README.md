@@ -33,28 +33,31 @@ In the repository: **Settings → Secrets and variables → Actions**.
 
 **Variables:**
 
-| Name                               | Value (from bootstrap output)                             |
-| ---------------------------------- | --------------------------------------------------------- |
-| `AWS_REGION`                       | `eu-west-1`                                               |
-| `AWS_ROLE_ARN`                     | `github_actions_role_arn` output                          |
-| `TF_STATE_BUCKET`                  | `terraform_state_bucket` output                           |
-| `TF_LOCK_TABLE`                    | `terraform_lock_table` output                             |
-| `TF_VAR_DOMAIN_NAME`               | e.g. `whitkirk.com`                                       |
-| `TF_VAR_INBOUND_EMAIL_ADDRESS`     | e.g. `supplier-updates@whitkirk.com`                      |
-| `TF_VAR_NOTIFICATION_FROM_ADDRESS` | e.g. `supplier-updates@whitkirk.com`                      |
-| `TF_VAR_PROJECT_NAME`              | Must match bootstrap `project_name` (default `bartender`) |
+| Name                                        | Value (from bootstrap output)                             |
+| ------------------------------------------- | --------------------------------------------------------- |
+| `AWS_REGION`                                | `eu-west-1`                                               |
+| `AWS_ROLE_ARN`                              | `github_actions_role_arn` output                          |
+| `TF_STATE_BUCKET`                           | `terraform_state_bucket` output                           |
+| `TF_LOCK_TABLE`                             | `terraform_lock_table` output                             |
+| `TF_VAR_DOMAIN_NAME`                        | e.g. `whitkirk.com`                                       |
+| `TF_VAR_INBOUND_EMAIL_ADDRESS`              | e.g. `supplier-updates@whitkirk.com`                      |
+| `TF_VAR_NOTIFICATION_FROM_ADDRESS`          | e.g. `supplier-updates@whitkirk.com`                      |
+| `TF_VAR_PROJECT_NAME`                       | Must match bootstrap `project_name` (default `bartender`) |
+| `TF_VAR_AIRTABLE_BASE_ID`                   | Airtable Products base ID (e.g. `appXXXXXXXXXXXXXX`)      |
+| `TF_VAR_AIRTABLE_SUPPLIER_MAPPING_TABLE_ID` | Supplier mapping table ID (e.g. `tblXXXXXXXXXXXXXX`)      |
 
 **Secrets:**
 
-| Name                  | Notes              |
-| --------------------- | ------------------ |
-| `TF_VAR_LOYVERSE_PAT` | Loyverse API token |
+| Name                  | Notes                                                                      |
+| --------------------- | -------------------------------------------------------------------------- |
+| `TF_VAR_LOYVERSE_PAT` | Loyverse API token                                                         |
+| `TF_VAR_AIRTABLE_PAT` | Airtable personal access token with read/write access to the Products base |
 
 No `AWS_ACCESS_KEY_ID` or `AWS_SECRET_ACCESS_KEY` secrets are required.
 
 ## Deploy the application
 
-Push to `main` (with changes under `terraform/`, Lambda source, or `supplier_data.yaml`), or run the **Deploy** workflow manually from the Actions tab.
+Push to `main` (with changes under `terraform/`, Lambda source, or supplier mapping code), or run the **Deploy** workflow manually from the Actions tab.
 
 The workflow:
 

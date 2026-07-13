@@ -41,6 +41,22 @@ variable "loyverse_pat" {
   sensitive   = true
 }
 
+variable "airtable_pat" {
+  description = "Airtable personal access token for supplier mapping reads and writes."
+  type        = string
+  sensitive   = true
+}
+
+variable "airtable_base_id" {
+  description = "Airtable base ID for the Products supplier mapping table."
+  type        = string
+}
+
+variable "airtable_supplier_mapping_table_id" {
+  description = "Airtable table ID for the Supplier mapping table."
+  type        = string
+}
+
 variable "lambda_python_runtime" {
   description = "Python runtime for the supplier email Lambda."
   type        = string
