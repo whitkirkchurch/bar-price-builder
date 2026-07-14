@@ -28,6 +28,8 @@ palette:
 icons:
   apple:
     icon: U+F5D1
+  bat:
+    icon: U+F6B5
   beer-mug:
     icon: U+E0B3
   blueberries:
@@ -81,6 +83,9 @@ flags:
   af:
     text: AF
     value: royal_blue
+  gf:
+    text: GF
+    value: blood_orange
 
 # Optional override for where generated images are written.
 # If relative, path is resolved from repository root.
@@ -103,10 +108,16 @@ product_id_overrides:
     text_colour: red
     highlight_colour: peach
   7c9b5218-b31d-43f1-b888-044d871694a0: {} # Baby Guinness
-  a90fab61-ff96-40f7-99f4-49beff70a316: {} # Bacardi
+  a90fab61-ff96-40f7-99f4-49beff70a316: # Bacardi
+    background_colour: white
+    text_colour: black
+    highlight_colour: red
+    icon: bat
   d9f3af73-7c35-4edd-aa2a-d28116324137: # Bacardi 8
     background_colour: whisky
-    text_colour: straw
+    text_colour: red
+    highlight_colour: straw
+    icon: bat
   2c0ae022-7dde-4369-9799-1c0aa5f2df44: # Baileys
     background_colour: black
     text_colour: gold
@@ -119,7 +130,7 @@ product_id_overrides:
     icon: gin-glass
     background_colour: barbie
     text_colour: white
-  69af0a08-d602-4e15-b90a-08c1d9ea6240: # Bell's
+  69af0a08-d602-4e15-b90a-08c1d9ea6240: # Bell's Whisky
     background_colour: whisky
     text_colour: purple
     highlight_colour: white
@@ -304,6 +315,12 @@ product_id_overrides:
     text_colour: straw
     flags:
       - af
+  d99b7735-229c-44ee-abeb-4fefc9855fc1: # Old Mout Berries & Cherries
+    icon: bottle
+    background_colour: bottle_brown
+    text_colour: straw
+    flags:
+      - af
   3d21a6b7-e7a0-460f-bbef-6b700617d3a6: # Old Mout Berries & Cherries 0.0
     icon: bottle
     background_colour: bottle_brown
@@ -311,6 +328,13 @@ product_id_overrides:
     flags:
       - af
   49df2e82-cb85-4401-b6d4-65607ecbb807: {} # Pernod
+  916f8001-476a-4c19-a0d2-84e79ba5d8da: # Peroni Gluten Free
+    icon: bottle
+    background_colour: medium_green
+    text_colour: white
+    highlight_colour: red
+    flags:
+      - gf
   3ddb41f3-1935-494d-afa7-7a6535ac4198: {} # Pimm's Glass
   fdef5a07-0ff3-49b3-9c19-bdb59bc9f062: {} # Pimm's Pitcher
   5e407e42-25a7-4090-8368-f575a97f1bfa: # Pinot Grigio (Large)
