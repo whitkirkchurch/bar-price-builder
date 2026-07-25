@@ -46,6 +46,8 @@ icons:
     icon: U+F79F
   citrus-slice:
     icon: U+E2F5
+  dragon:
+    icon: U+F6D5
   glass:
     icon: U+F804
   glass-half:
@@ -196,6 +198,11 @@ product_id_overrides:
     background_colour: light_grey
     text_colour: coke_red
   8644b390-997f-4f3d-882b-47072c36b77a: {} # Disaronno
+  ee8d1091-3d11-4162-bd07-dd628ae9392c: # Dragon Energy
+    background_colour: black
+    text_colour: red
+    highlight_colour: white
+    icon: dragon
   75201737-e4af-4de8-9175-0682960fe050: # Drinks Package
     icon: box
   8eee5ce7-0c05-48e4-8d01-a3b2a84e75de: {} # El Sueno Gold
@@ -261,6 +268,8 @@ product_id_overrides:
     icon: water-bottle
     background_colour: black
     text_colour: white
+  0def3bd3-197e-4c75-9f05-ea193ece3c03: # Heineken
+    icon: can
   7233c8f1-023c-49ae-a6d0-28ac9772a7f4: # Heineken 0.0
     icon: bottle
     flags:
@@ -450,5 +459,3 @@ product_id_overrides:
       - af
     text_colour: sky_blue
     background_colour: purple
-  0def3bd3-197e-4c75-9f05-ea193ece3c03: # Heineken (Can)
-    icon: can
