@@ -669,6 +669,73 @@ def test_seed_new_product_ids_rewrites_sorted_by_product_name(tmp_path: Path) ->
     assert "background_color: '#222222'" in rewritten
 
 
+def test_seed_new_product_ids_keeps_existing_off_sale_sorted_by_name(tmp_path: Path) -> None:
+    products_yaml = tmp_path / "products.yaml"
+    products_yaml.write_text(
+        "product_id_overrides:\n"
+        "  item-a: # Alpha\n"
+        "    background_color: '#111111'\n"
+        "  item-off: # Off Sale Drink\n"
+        "    icon: can\n"
+        "    background_colour: light_grey\n"
+        "  item-b: # Zeta\n"
+        "    background_color: '#222222'\n",
+    )
+
+    on_sale_products = [
+        product_images.ProductImageTarget(item_id="item-a", name="Alpha"),
+        product_images.ProductImageTarget(item_id="item-b", name="Zeta"),
+        product_images.ProductImageTarget(item_id="item-c", name="Beta"),
+    ]
+
+    new_count = product_images._seed_new_product_ids(
+        products_yaml,
+        on_sale_products,
+        item_names_by_id={
+            "item-a": "Alpha",
+            "item-b": "Zeta",
+            "item-c": "Beta",
+            "item-off": "Off Sale Drink",
+            "item-never-seeded": "Not In Yaml",
+        },
+    )
+
+    assert new_count == 1
+    rewritten = products_yaml.read_text()
+    assert rewritten.index("item-a") < rewritten.index("item-c")
+    assert rewritten.index("item-c") < rewritten.index("item-off")
+    assert rewritten.index("item-off") < rewritten.index("item-b")
+    assert "icon: can" in rewritten
+    assert "background_colour: light_grey" in rewritten
+    assert "# Off Sale Drink" in rewritten
+    assert "item-never-seeded" not in rewritten
+
+
+def test_seed_new_product_ids_does_not_add_off_sale_products_missing_from_yaml(
+    tmp_path: Path,
+) -> None:
+    products_yaml = tmp_path / "products.yaml"
+    products_yaml.write_text("product_id_overrides: {}\n")
+
+    on_sale_products = [
+        product_images.ProductImageTarget(item_id="item-a", name="Alpha"),
+    ]
+
+    new_count = product_images._seed_new_product_ids(
+        products_yaml,
+        on_sale_products,
+        item_names_by_id={
+            "item-a": "Alpha",
+            "item-off": "Off Sale Drink",
+        },
+    )
+
+    assert new_count == 1
+    rewritten = products_yaml.read_text()
+    assert "item-a:" in rewritten
+    assert "item-off" not in rewritten
+
+
 def test_run_product_image_sync_creates_cache_file_on_write(monkeypatch, tmp_path: Path) -> None:
     products_yaml = tmp_path / "products.yaml"
     products_yaml.write_text("defaults: {}\n")
