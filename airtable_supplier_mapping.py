@@ -7,15 +7,19 @@ from typing import TYPE_CHECKING, Any
 import requests
 
 if TYPE_CHECKING:
+    from datetime import date
+
     from supplier_data import SupplierCodeMapEntry, SupplierCodePluMapping, SupplierRow
 
 AIRTABLE_API_URL = "https://api.airtable.com/v0"
 AIRTABLE_WEB_BASE_URL = "https://airtable.com"
 FIELD_SUPPLIER_CODE = "Supplier Code"
-FIELD_LABEL = "Label"
+FIELD_LABEL = "Supplier Label"
 FIELD_IGNORE = "Ignore"
 FIELD_PLU = "PLU"
 FIELD_SERVINGS_PER_UNIT = "Servings per Unit"
+FIELD_LAST_SUPPLIER_UPDATE = "Last supplier update"
+FIELD_LAST_COST_CHANGE = "Last cost change"
 
 
 @dataclass(frozen=True)
@@ -49,6 +53,7 @@ class AirtableSupplierMappingStore:
         self._table_id = table_id
         self._session = session or requests.Session()
         self._records_cache: list[SupplierMappingRecord] | None = None
+        self._pending_updates_by_id: dict[str, dict[str, Any]] = {}
 
     @classmethod
     def from_env(cls) -> AirtableSupplierMappingStore:
@@ -87,25 +92,78 @@ class AirtableSupplierMappingStore:
 
     def update_labels(self, rows: list[SupplierRow]) -> int:
         labels_by_code = {row["supplier_code"]: _row_label(row) for row in rows}
-        updates: list[dict[str, Any]] = []
+        updated = 0
 
         for record in self._list_records():
             label = labels_by_code.get(record.supplier_code)
             if label is None or record.label == label:
                 continue
-            updates.append(
-                {
-                    "id": record.record_id,
-                    "fields": {FIELD_LABEL: label},
-                },
+            self.queue_record_update(record.record_id, {FIELD_LABEL: label})
+            updated += 1
+
+        return updated
+
+    def queue_last_supplier_updates(self, rows: list[SupplierRow], *, updated_at: date) -> int:
+        supplier_codes = {row["supplier_code"] for row in rows}
+        return self._queue_timestamp_for_supplier_codes(
+            supplier_codes,
+            field_name=FIELD_LAST_SUPPLIER_UPDATE,
+            timestamp=updated_at,
+        )
+
+    def queue_last_cost_changes(self, supplier_codes: set[int], *, changed_at: date) -> int:
+        return self._queue_timestamp_for_supplier_codes(
+            supplier_codes,
+            field_name=FIELD_LAST_COST_CHANGE,
+            timestamp=changed_at,
+        )
+
+    def _queue_timestamp_for_supplier_codes(
+        self,
+        supplier_codes: set[int],
+        *,
+        field_name: str,
+        timestamp: date,
+    ) -> int:
+        formatted_timestamp = timestamp.isoformat()
+        updated = 0
+
+        for record in self._list_records():
+            if record.supplier_code not in supplier_codes:
+                continue
+            self.queue_record_update(
+                record.record_id,
+                {field_name: formatted_timestamp},
             )
+            updated += 1
 
-        self._patch_records(updates)
-        return len(updates)
+        return updated
 
-    def seed_missing_codes(self, rows: list[SupplierRow]) -> list[SupplierRow]:
+    def queue_record_update(self, record_id: str, fields: dict[str, Any]) -> None:
+        if not fields:
+            return
+
+        pending_fields = self._pending_updates_by_id.setdefault(record_id, {})
+        pending_fields.update(fields)
+
+    def flush_updates(self) -> int:
+        records = [{"id": record_id, "fields": fields} for record_id, fields in self._pending_updates_by_id.items()]
+        if not records:
+            return 0
+
+        self._patch_records(records)
+        self._pending_updates_by_id.clear()
+        return len(records)
+
+    def seed_missing_codes(
+        self,
+        rows: list[SupplierRow],
+        *,
+        last_supplier_update: date,
+    ) -> list[SupplierRow]:
         existing_codes = {record.supplier_code for record in self._list_records()}
         rows_by_code = {row["supplier_code"]: row for row in rows}
+        formatted_updated_at = last_supplier_update.isoformat()
 
         new_rows: list[SupplierRow] = []
         creates: list[dict[str, Any]] = []
@@ -120,6 +178,7 @@ class AirtableSupplierMappingStore:
                         FIELD_SUPPLIER_CODE: _stringify_identifier(supplier_code),
                         FIELD_LABEL: _row_label(row),
                         FIELD_IGNORE: False,
+                        FIELD_LAST_SUPPLIER_UPDATE: formatted_updated_at,
                     },
                 },
             )

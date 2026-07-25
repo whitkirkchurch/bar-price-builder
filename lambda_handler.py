@@ -157,7 +157,7 @@ def handler(event: dict, _context) -> dict:
             apply=True,
             write_mapping=True,
         )
-        body = format_supplier_update_report(report, apply=True)
+        body = format_supplier_update_report(report)
         subject = "Supplier cost update results"
     except Exception as exc:  # noqa: BLE001
         body = _failure_body(str(exc))
