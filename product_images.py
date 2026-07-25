@@ -1405,7 +1405,59 @@ def _resolve_output_dir(raw_config: dict[str, Any]) -> Path:
     return OUTPUT_DIR / "product-images"
 
 
-def _seed_new_product_ids(products_file: Path, products: list[ProductImageTarget]) -> int:
+def _item_names_by_id(items: list[dict[str, Any]]) -> dict[str, str]:
+    names: dict[str, str] = {}
+    for item in items:
+        item_id = str(item.get("id", "")).strip()
+        if not item_id:
+            continue
+        item_name = str(item.get("item_name", "")).strip()
+        if item_name:
+            names[item_id] = item_name
+    return names
+
+
+def _override_comment_name(overrides: CommentedMap, item_id: str) -> str | None:
+    comment_info = overrides.ca.items.get(item_id) if hasattr(overrides, "ca") else None
+    if comment_info and len(comment_info) >= 3:
+        token = comment_info[2]
+        value = getattr(token, "value", None) if token is not None else None
+        if isinstance(value, str):
+            name = value.lstrip("#").strip()
+            if name:
+                return name
+
+    existing_value = overrides.get(item_id)
+    if isinstance(existing_value, CommentedMap) and hasattr(existing_value, "ca"):
+        comment = existing_value.ca.comment
+        if comment and comment[0] is not None:
+            value = getattr(comment[0], "value", None)
+            if isinstance(value, str):
+                name = value.lstrip("#").strip()
+                if name:
+                    return name
+    return None
+
+
+def _as_override_map(value: Any) -> CommentedMap:
+    if isinstance(value, CommentedMap):
+        return value
+    if isinstance(value, dict):
+        return CommentedMap(value)
+    return CommentedMap()
+
+
+def _seed_new_product_ids(
+    products_file: Path,
+    products: list[ProductImageTarget],
+    *,
+    item_names_by_id: dict[str, str] | None = None,
+) -> int:
+    """Seed on-sale product IDs into products.yaml without dropping existing entries.
+
+    Existing overrides are always kept, including products that are no longer on sale.
+    New empty override entries are only added for on-sale products that are missing.
+    """
     config_doc = _load_products_config_document(products_file)
     raw_overrides = config_doc.get("product_id_overrides")
 
@@ -1414,31 +1466,34 @@ def _seed_new_product_ids(products_file: Path, products: list[ProductImageTarget
         for key, value in raw_overrides.items():
             existing_overrides[str(key)] = value
 
+    names = dict(item_names_by_id or {})
+    for product in products:
+        names[product.item_id] = product.name
+
+    on_sale_ids = {product.item_id for product in products}
+    ids_to_include = set(existing_overrides) | on_sale_ids
+
+    def sort_key(item_id: str) -> str:
+        if item_id in names:
+            return names[item_id].lower()
+        comment_name = _override_comment_name(existing_overrides, item_id)
+        if comment_name:
+            return comment_name.lower()
+        return item_id.lower()
+
     overrides = CommentedMap()
-
     new_count = 0
-    products_by_name = sorted(products, key=lambda product: product.name.lower())
-    for product in products_by_name:
-        existing_value = existing_overrides.pop(product.item_id, None)
-        if isinstance(existing_value, CommentedMap):
-            overrides[product.item_id] = existing_value
-        elif isinstance(existing_value, dict):
-            overrides[product.item_id] = CommentedMap(existing_value)
-        else:
-            overrides[product.item_id] = CommentedMap()
+    for item_id in sorted(ids_to_include, key=sort_key):
+        existing_value = existing_overrides.get(item_id)
+        if existing_value is None:
+            overrides[item_id] = CommentedMap()
             new_count += 1
+        else:
+            overrides[item_id] = _as_override_map(existing_value)
 
-        overrides.yaml_add_eol_comment(product.name, key=product.item_id)
-
-    for item_id in sorted(existing_overrides):
-        value = existing_overrides[item_id]
-        if isinstance(value, CommentedMap):
-            overrides[item_id] = value
-            continue
-        if isinstance(value, dict):
-            overrides[item_id] = CommentedMap(value)
-            continue
-        overrides[item_id] = CommentedMap()
+        name = names.get(item_id) or _override_comment_name(existing_overrides, item_id)
+        if name:
+            overrides.yaml_add_eol_comment(name, key=item_id)
 
     config_doc["product_id_overrides"] = overrides
 
@@ -1454,7 +1509,11 @@ def run_product_image_sync(
 ) -> ProductImageSyncSummary:
     items = get_loyverse_items()
     targets = _build_targets_from_loyverse_items(items)
-    new_product_ids_added = _seed_new_product_ids(products_file, targets)
+    new_product_ids_added = _seed_new_product_ids(
+        products_file,
+        targets,
+        item_names_by_id=_item_names_by_id(items),
+    )
 
     raw_config = _load_products_config(products_file)
     style_assets = _parse_style_assets(raw_config)

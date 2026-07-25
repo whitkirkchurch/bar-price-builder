@@ -164,7 +164,7 @@ poetry run python app.py build-product-images
 
 This writes PNG files to `outputs/product-images` by default.
 
-During each run, the command fetches all items from Loyverse (same bulk item fetch pattern as other operations), filters to on-sale products, and seeds any new product IDs into `data/products.yaml` under `product_id_overrides` with inline comments for item names.
+During each run, the command fetches all items from Loyverse (same bulk item fetch pattern as other operations), filters to on-sale products for image generation, and seeds any new on-sale product IDs into `data/products.yaml` under `product_id_overrides` with inline comments for item names. Existing YAML entries are kept even if a product is no longer on sale; off-sale products that are not already in the YAML are not added.
 
 To upload generated images to Loyverse, run with `--write`:
 
