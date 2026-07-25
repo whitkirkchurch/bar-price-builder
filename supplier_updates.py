@@ -10,10 +10,13 @@ from supplier_data import (
     SupplierCodePluMapping,
     SupplierRow,
     get_active_mapping_by_code,
+    parse_supplier_confirmation_delivery_date,
     parse_supplier_confirmation_rows,
 )
 
 if TYPE_CHECKING:
+    from datetime import date
+
     from airtable_supplier_mapping import AirtableSupplierMappingStore
 
 
@@ -355,6 +358,34 @@ def _empty_summary() -> SupplierUpdateSummary:
     )
 
 
+def _sync_airtable_mapping(
+    rows: list[SupplierRow],
+    mapping_store: AirtableSupplierMappingStore,
+    report: SupplierUpdateReport,
+    delivery_date: date,
+) -> None:
+    updated_labels = mapping_store.update_labels(rows)
+    if updated_labels > 0:
+        report.lines.append(
+            f"Updated {updated_labels} supplier product label{'s' if updated_labels != 1 else ''} in Airtable",
+        )
+
+    mapping_store.queue_last_supplier_updates(rows, updated_at=delivery_date)
+    newly_seeded_rows = mapping_store.seed_missing_codes(
+        rows,
+        last_supplier_update=delivery_date,
+    )
+    if newly_seeded_rows:
+        report.newly_seeded_rows.extend(newly_seeded_rows)
+        report.lines.append(
+            "Added "
+            f"{len(newly_seeded_rows)} new supplier product entr"
+            f"{'y' if len(newly_seeded_rows) == 1 else 'ies'} to Airtable",
+        )
+
+    mapping_store.flush_updates()
+
+
 def run_supplier_cost_updates(
     confirmation_text: str,
     mapping_store: AirtableSupplierMappingStore,
@@ -370,20 +401,10 @@ def run_supplier_cost_updates(
         report.errors.append(msg)
         raise ValueError(msg)
 
+    delivery_date = parse_supplier_confirmation_delivery_date(confirmation_text)
+
     if write_mapping:
-        updated_labels = mapping_store.update_labels(rows)
-        if updated_labels > 0:
-            report.lines.append(
-                f"Updated {updated_labels} supplier product label{'s' if updated_labels != 1 else ''} in Airtable",
-            )
-        newly_seeded_rows = mapping_store.seed_missing_codes(rows)
-        if newly_seeded_rows:
-            report.newly_seeded_rows.extend(newly_seeded_rows)
-            report.lines.append(
-                "Added "
-                f"{len(newly_seeded_rows)} new supplier product entr"
-                f"{'y' if len(newly_seeded_rows) == 1 else 'ies'} to Airtable",
-            )
+        _sync_airtable_mapping(rows, mapping_store, report, delivery_date)
 
     entries_by_code = mapping_store.get_entries()
     mappings_by_code = get_active_mapping_by_code(entries_by_code)
@@ -413,6 +434,7 @@ def run_supplier_cost_updates(
     skipped = 0
     changed_costs = 0
     changed_eans = 0
+    cost_changed_supplier_codes: set[int] = set()
 
     for row in rows:
         result = _process_single_row(row, processing_ctx)
@@ -420,6 +442,8 @@ def run_supplier_cost_updates(
             mapped_rows += result.mapped_count
             changed_costs += result.cost_changed_count
             changed_eans += result.ean_changed_count
+            if result.cost_changed_count > 0:
+                cost_changed_supplier_codes.add(row["supplier_code"])
             updated += result.updated_count
             failed += result.failed_count
             skipped += result.skipped_count
@@ -427,6 +451,13 @@ def run_supplier_cost_updates(
             missing_codes += result.missing_code_count
             ignored_rows += result.ignored_count
             missing_plus += result.missing_plu_count
+
+    if write_mapping and cost_changed_supplier_codes:
+        mapping_store.queue_last_cost_changes(
+            cost_changed_supplier_codes,
+            changed_at=delivery_date,
+        )
+        mapping_store.flush_updates()
 
     report.summary = SupplierUpdateSummary(
         parsed_rows=len(rows),
@@ -443,8 +474,8 @@ def run_supplier_cost_updates(
     return report
 
 
-def _format_report_summary_lines(summary: SupplierUpdateSummary, *, apply: bool) -> list[str]:
-    lines = [
+def _format_report_summary_lines(summary: SupplierUpdateSummary) -> list[str]:
+    return [
         "Supplier cost update completed.",
         "",
         f"Parsed supplier rows: {summary.parsed_rows}",
@@ -455,15 +486,6 @@ def _format_report_summary_lines(summary: SupplierUpdateSummary, *, apply: bool)
         f"Rows with changed cost: {summary.rows_with_changed_cost}",
         f"Rows with changed EAN: {summary.rows_with_changed_ean}",
     ]
-    if apply:
-        lines.extend(
-            [
-                f"API updates applied: {summary.applied_updates}",
-                f"API updates failed: {summary.failed_updates}",
-                f"API updates skipped (unchanged): {summary.skipped_unchanged}",
-            ],
-        )
-    return lines
 
 
 def _format_supplier_row_line(row: SupplierRow, *, record_urls_by_code: dict[int, str]) -> str:
@@ -554,7 +576,7 @@ def _format_report_detail_sections(report: SupplierUpdateReport) -> list[str]:
     return sections
 
 
-def format_supplier_update_report(report: SupplierUpdateReport, *, apply: bool, include_details: bool = True) -> str:
+def format_supplier_update_report(report: SupplierUpdateReport, *, include_details: bool = True) -> str:
     sections: list[str] = []
 
     if report.errors:
@@ -562,7 +584,7 @@ def format_supplier_update_report(report: SupplierUpdateReport, *, apply: bool, 
         sections.extend(f"  {error}" for error in report.errors)
         sections.append("")
 
-    sections.extend(_format_report_summary_lines(report.summary, apply=apply))
+    sections.extend(_format_report_summary_lines(report.summary))
     sections.extend(_format_report_detail_sections(report))
 
     if include_details and report.lines:

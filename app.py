@@ -18,7 +18,7 @@ from supplier_email import extract_supplier_confirmation_text, parse_raw_email
 from supplier_updates import SupplierUpdateReport, run_supplier_cost_updates
 
 
-def _print_supplier_update_summary(report: SupplierUpdateReport, apply: bool) -> None:
+def _print_supplier_update_summary(report: SupplierUpdateReport) -> None:
     summary = report.summary
     click.echo(f"Parsed supplier rows: {summary.parsed_rows}")
     click.echo(f"Mapped output rows: {summary.mapped_rows}")
@@ -27,10 +27,6 @@ def _print_supplier_update_summary(report: SupplierUpdateReport, apply: bool) ->
     click.echo(f"Missing PLUs on till: {summary.missing_plus_on_till}")
     click.echo(f"Rows with changed cost: {summary.rows_with_changed_cost}")
     click.echo(f"Rows with changed EAN: {summary.rows_with_changed_ean}")
-    if apply:
-        click.echo(f"API updates applied: {summary.applied_updates}")
-        click.echo(f"API updates failed: {summary.failed_updates}")
-        click.echo(f"API updates skipped (unchanged): {summary.skipped_unchanged}")
 
 
 @click.group()
@@ -91,7 +87,7 @@ def update_costs_from_supplier(
         click.echo(click.style(f"API Error: {exc}", fg="red"), err=True)
         return
 
-    _print_supplier_update_summary(report, apply)
+    _print_supplier_update_summary(report)
 
 
 @cli.command("parse-supplier-email")
@@ -136,7 +132,7 @@ def parse_supplier_email(
         click.echo(click.style(f"API Error: {exc}", fg="red"), err=True)
         return
 
-    _print_supplier_update_summary(report, apply)
+    _print_supplier_update_summary(report)
 
 
 @cli.command("build-product-images")

@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import re
+from datetime import date
 from typing import TypedDict
 
 
@@ -24,6 +26,10 @@ class SupplierRow(TypedDict):
 
 
 HEADER_LABELS = ["Quantity", "Code", "Description", "Size", "Pack", "Price", "EAN code"]
+DELIVERY_DATE_PATTERN = re.compile(
+    r"\bDelivery\s+date\s*:\s*(\d{1,2})/(\d{1,2})/(\d{2}|\d{4})\b",
+    re.IGNORECASE,
+)
 
 
 def _find_header_index(lines: list[str]) -> int:
@@ -145,6 +151,23 @@ def _parse_supplier_row(fields: dict[str, str]) -> SupplierRow | None:
 
 def contains_supplier_confirmation_header(text: str) -> bool:
     return _find_header_index(text.splitlines()) != -1
+
+
+def parse_supplier_confirmation_delivery_date(text: str) -> date:
+    match = DELIVERY_DATE_PATTERN.search(text)
+    if match is None:
+        msg = "Supplier confirmation must contain a delivery date"
+        raise ValueError(msg)
+
+    day, month, year = (int(part) for part in match.groups())
+    if year < 100:
+        year += 2000
+
+    try:
+        return date(year, month, day)
+    except ValueError as error:
+        msg = f"Supplier confirmation has invalid delivery date: {match.group(0)!r}"
+        raise ValueError(msg) from error
 
 
 def parse_supplier_confirmation_rows(text: str) -> list[SupplierRow]:

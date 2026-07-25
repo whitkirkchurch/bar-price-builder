@@ -1,10 +1,13 @@
 """Unit tests for supplier_data.py parsing and mapping logic."""
 
+from datetime import date
+
 import pytest
 
 from supplier_data import (
     SupplierCodeMapEntry,
     get_active_mapping_by_code,
+    parse_supplier_confirmation_delivery_date,
     parse_supplier_confirmation_rows,
 )
 
@@ -88,6 +91,26 @@ class TestSupplierDataParsing:
         rows = parse_supplier_confirmation_rows(text)
         assert len(rows) == 1
         assert rows[0]["ean"] == "6000000000001"
+
+
+class TestSupplierDeliveryDateParsing:
+    def test_parse_supplier_confirmation_delivery_date(self) -> None:
+        text = "Order:708806  Your ref:  Delivery date:17/07/26  A/c:D23014"
+
+        assert parse_supplier_confirmation_delivery_date(text) == date(2026, 7, 17)
+
+    def test_parse_supplier_confirmation_delivery_date_accepts_four_digit_year(self) -> None:
+        text = "Delivery date: 17/07/2026"
+
+        assert parse_supplier_confirmation_delivery_date(text) == date(2026, 7, 17)
+
+    def test_parse_supplier_confirmation_delivery_date_requires_date(self) -> None:
+        with pytest.raises(ValueError, match="must contain a delivery date"):
+            parse_supplier_confirmation_delivery_date("Order:708806")
+
+    def test_parse_supplier_confirmation_delivery_date_rejects_invalid_date(self) -> None:
+        with pytest.raises(ValueError, match="invalid delivery date"):
+            parse_supplier_confirmation_delivery_date("Delivery date:31/02/26")
 
 
 class TestSupplierCodeMapping:

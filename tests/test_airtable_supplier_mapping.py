@@ -1,11 +1,18 @@
 """Tests for airtable_supplier_mapping.py."""
 
+from __future__ import annotations
+
+from datetime import date
+from typing import TYPE_CHECKING
 from unittest.mock import MagicMock
 
 import pytest
 import requests
 
 from airtable_supplier_mapping import AirtableSupplierMappingStore
+
+if TYPE_CHECKING:
+    from supplier_data import SupplierRow
 
 TABLE_ID = "tblTEST"
 
@@ -21,7 +28,7 @@ def _record(
 ) -> dict:
     fields: dict = {
         "Supplier Code": str(supplier_code),
-        "Label": label,
+        "Supplier Label": label,
         "Ignore": ignore,
     }
     if plu is not None:
@@ -103,6 +110,7 @@ def test_seed_missing_codes_creates_only_new_rows() -> None:
                 "ean": "999",
             },
         ],
+        last_supplier_update=date(2026, 7, 17),
     )
 
     assert len(new_rows) == 1
@@ -111,7 +119,8 @@ def test_seed_missing_codes_creates_only_new_rows() -> None:
     assert session.post.call_args.args[0] == "https://api.airtable.com/v0/appTEST/tblTEST"
     payload = session.post.call_args.kwargs["json"]
     assert payload["records"][0]["fields"]["Supplier Code"] == "19999"
-    assert payload["records"][0]["fields"]["Label"] == "Mystery Spirit | 1L"
+    assert payload["records"][0]["fields"]["Supplier Label"] == "Mystery Spirit | 1L"
+    assert payload["records"][0]["fields"]["Last supplier update"] == "2026-07-17"
 
 
 def test_from_env_requires_credentials(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -219,9 +228,141 @@ def test_update_labels_patches_changed_records_only() -> None:
     )
 
     assert updated == 1
+    session.patch.assert_not_called()
+
+    flushed = store.flush_updates()
+
+    assert flushed == 1
     session.patch.assert_called_once()
     payload = session.patch.call_args.kwargs["json"]
-    assert payload["records"][0]["fields"]["Label"] == "Vodka | 1L"
+    assert payload["records"][0]["fields"]["Supplier Label"] == "Vodka | 1L"
+
+
+def test_queue_last_supplier_updates_includes_every_seen_existing_product() -> None:
+    session = MagicMock()
+    list_response = MagicMock()
+    list_response.json.return_value = {
+        "records": [
+            _record(record_id="rec1", supplier_code=10001, label="Vodka | 1L"),
+            _record(record_id="rec2", supplier_code=10002, label="Ignored", ignore=True),
+            _record(record_id="rec3", supplier_code=10003, label="Not in confirmation"),
+        ],
+    }
+    list_response.raise_for_status.return_value = None
+    patch_response = MagicMock()
+    patch_response.raise_for_status.return_value = None
+    session.get.return_value = list_response
+    session.patch.return_value = patch_response
+    store = AirtableSupplierMappingStore(
+        personal_access_token="test-token",
+        base_id="appTEST",
+        table_id=TABLE_ID,
+        session=session,
+    )
+    rows: list[SupplierRow] = [
+        {
+            "supplier_code": supplier_code,
+            "description": description,
+            "size": "1L",
+            "pack": 6,
+            "price_pence": 1250,
+            "ean": str(supplier_code),
+        }
+        for supplier_code, description in [(10001, "Vodka"), (10002, "Ignored")]
+    ]
+
+    queued = store.queue_last_supplier_updates(
+        rows,
+        updated_at=date(2026, 7, 17),
+    )
+    flushed = store.flush_updates()
+
+    assert queued == 2
+    assert flushed == 2
+    payload = session.patch.call_args.kwargs["json"]
+    assert payload["records"] == [
+        {"id": "rec1", "fields": {"Last supplier update": "2026-07-17"}},
+        {"id": "rec2", "fields": {"Last supplier update": "2026-07-17"}},
+    ]
+
+
+def test_queue_last_cost_changes_only_includes_changed_products() -> None:
+    session = MagicMock()
+    list_response = MagicMock()
+    list_response.json.return_value = {
+        "records": [
+            _record(record_id="rec1", supplier_code=10001),
+            _record(record_id="rec2", supplier_code=10002),
+        ],
+    }
+    list_response.raise_for_status.return_value = None
+    patch_response = MagicMock()
+    patch_response.raise_for_status.return_value = None
+    session.get.return_value = list_response
+    session.patch.return_value = patch_response
+    store = AirtableSupplierMappingStore(
+        personal_access_token="test-token",
+        base_id="appTEST",
+        table_id=TABLE_ID,
+        session=session,
+    )
+
+    queued = store.queue_last_cost_changes(
+        {10002},
+        changed_at=date(2026, 7, 17),
+    )
+    flushed = store.flush_updates()
+
+    assert queued == 1
+    assert flushed == 1
+    payload = session.patch.call_args.kwargs["json"]
+    assert payload["records"] == [
+        {"id": "rec2", "fields": {"Last cost change": "2026-07-17"}},
+    ]
+
+
+def test_flush_updates_merges_changed_fields_and_batches_records() -> None:
+    session = MagicMock()
+    patch_response = MagicMock()
+    patch_response.raise_for_status.return_value = None
+    session.patch.return_value = patch_response
+    store = AirtableSupplierMappingStore(
+        personal_access_token="test-token",
+        base_id="appTEST",
+        table_id=TABLE_ID,
+        session=session,
+    )
+
+    store.queue_record_update("rec0", {"Supplier Label": "Updated"})
+    store.queue_record_update("rec0", {"New Field": "value"})
+    for index in range(1, 12):
+        store.queue_record_update(f"rec{index}", {"New Field": index})
+
+    flushed = store.flush_updates()
+
+    assert flushed == 12
+    assert session.patch.call_count == 2
+    first_payload = session.patch.call_args_list[0].kwargs["json"]
+    second_payload = session.patch.call_args_list[1].kwargs["json"]
+    assert len(first_payload["records"]) == 10
+    assert len(second_payload["records"]) == 2
+    assert first_payload["records"][0] == {
+        "id": "rec0",
+        "fields": {"Supplier Label": "Updated", "New Field": "value"},
+    }
+
+
+def test_flush_updates_does_nothing_when_no_changes_are_queued() -> None:
+    session = MagicMock()
+    store = AirtableSupplierMappingStore(
+        personal_access_token="test-token",
+        base_id="appTEST",
+        table_id=TABLE_ID,
+        session=session,
+    )
+
+    assert store.flush_updates() == 0
+    session.patch.assert_not_called()
 
 
 def test_list_records_raises_for_http_errors() -> None:
