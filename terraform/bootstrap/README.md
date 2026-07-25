@@ -164,13 +164,13 @@ terraform apply
 terraform output
 ```
 
-| Output                    | Use                               |
-| ------------------------- | --------------------------------- |
-| `github_actions_role_arn` | GitHub variable `AWS_ROLE_ARN`    |
-| `terraform_state_bucket`  | GitHub variable `TF_STATE_BUCKET` |
-| `aws_region`              | GitHub variable `AWS_REGION`      |
+| Output                    | Use                             |
+| ------------------------- | ------------------------------- |
+| `github_actions_role_arn` | GitHub secret `AWS_ROLE_ARN`    |
+| `terraform_state_bucket`  | GitHub secret `TF_STATE_BUCKET` |
+| `aws_region`              | GitHub variable `AWS_REGION`    |
 
-Configure the remaining GitHub variables and `TF_VAR_LOYVERSE_PAT` secret as described in [../README.md#configure-github-repository-settings](../README.md#configure-github-repository-settings).
+Configure the remaining GitHub secrets (and the `AWS_REGION` variable) as described in [../README.md#configure-github-repository-settings](../README.md#configure-github-repository-settings).
 
 ### 4. Deploy the application
 

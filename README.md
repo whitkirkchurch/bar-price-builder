@@ -148,7 +148,7 @@ terraform -chdir=terraform/bootstrap init
 terraform -chdir=terraform/bootstrap apply
 ```
 
-Then add the bootstrap outputs and `TF_VAR_*` values as GitHub repository variables/secrets (documented in [`terraform/README.md`](terraform/README.md)).
+Then add the bootstrap outputs and `TF_VAR_*` values as GitHub repository secrets (and the `AWS_REGION` variable), as documented in [`terraform/README.md`](terraform/README.md).
 
 ### Building product images for Loyverse
 
