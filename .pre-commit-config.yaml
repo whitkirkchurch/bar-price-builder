@@ -47,7 +47,7 @@ repos:
       - id: djlint-jinja
 
   - repo: https://github.com/antonbabenko/pre-commit-terraform
-    rev: v1.108.1
+    rev: v1.109.0
     hooks:
       - id: terraform_fmt
       - id: terraform_providers_lock
