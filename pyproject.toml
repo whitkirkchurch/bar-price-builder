@@ -22,7 +22,7 @@ pillow = "12.3.0"
 [tool.poetry.group.dev.dependencies]
 json-schema-for-humans = "1.5.1"
 pytest = "9.1.1"
-boto3 = "1.43.78"
+boto3 = "1.43.79"
 
 [tool.ruff]
 line-length = 120
